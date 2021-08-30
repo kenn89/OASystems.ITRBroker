@@ -33,6 +33,7 @@ namespace OASystems.ITRBroker
                 {
                     _logger.LogInformation("Worker running at: {time}, Message: {test}", DateTimeOffset.Now, _message);
                     _nextRun = _schedule.GetNextOccurrence(DateTime.Now);
+                    TestAPI.DoTest(_message);
 
                 }
                 await Task.Delay(1000, stoppingToken);

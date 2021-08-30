@@ -17,9 +17,6 @@ namespace OASystems.ITRBroker
             List<ITRTask> list = new List<ITRTask>();
             list.Add(new ITRTask() { Name = "Job A", Schedule = "*/5 * * * * *" });
             list.Add(new ITRTask() { Name = "Job B", Schedule = "*/10 * * * * *" });
-            list.Add(new ITRTask() { Name = "Job C", Schedule = "*/15 * * * * *" });
-            list.Add(new ITRTask() { Name = "Job D", Schedule = "*/20 * * * * *" });
-            list.Add(new ITRTask() { Name = "Job E", Schedule = "*/5 * * * * *" });
 
             CreateHostBuilder(args, list).Build().Run();
         }

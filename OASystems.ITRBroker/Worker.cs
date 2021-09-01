@@ -12,15 +12,14 @@ namespace OASystems.ITRBroker
     public class Worker : BackgroundService
     {
         private readonly ILogger<Worker> _logger;
-        private readonly string _message;
-        private readonly CrontabSchedule _schedule;
+        private string _message;
+        private CrontabSchedule _schedule;
         private DateTime _nextRun;
 
         public Worker(ILogger<Worker> logger, string message, string schedule)
         {
             _logger = logger;
             _message = message;
-
             _schedule = CrontabSchedule.Parse(schedule, new CrontabSchedule.ParseOptions { IncludingSeconds = true });
             _nextRun = _schedule.GetNextOccurrence(DateTime.Now);
         }
@@ -34,7 +33,6 @@ namespace OASystems.ITRBroker
                     _logger.LogInformation("Worker running at: {time}, Message: {test}", DateTimeOffset.Now, _message);
                     _nextRun = _schedule.GetNextOccurrence(DateTime.Now);
                     TestAPI.DoTest(_message);
-
                 }
                 await Task.Delay(1000, stoppingToken);
             }

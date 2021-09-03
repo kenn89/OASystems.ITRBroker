@@ -16,7 +16,7 @@ namespace OASystems.ITRBroker.Controllers
     [ApiController]
     public class HomeController : ControllerBase
     {
-        // GET: <HomeController>
+        // GET: [controller]
         [HttpGet]
         public IEnumerable<ITRJobMetadata> Get()
         {
@@ -24,7 +24,7 @@ namespace OASystems.ITRBroker.Controllers
             return itrJobMetadataList;
         }
 
-        // GET <ValuesController>/5
+        // GET [controller]/5
         [HttpGet("{id}")]
         public ITRJobMetadata Get(int id)
         {
@@ -32,21 +32,21 @@ namespace OASystems.ITRBroker.Controllers
             return itrJobMetadata;
         }
 
-        // POST <HomeController>
+        // POST [controller]
         [HttpPost]
         public async Task PostAsync([FromBody] ITRJobMetadata itrJobMetadata)
-        {
-            await ITRJobSchedulerFactory.ResecheduleJob(itrJobMetadata);
-        }
-
-        // PUT <HomeController>
-        [HttpPut]
-        public async Task Put([FromBody] ITRJobMetadata itrJobMetadata)
         {
             await ITRJobSchedulerFactory.ScheduleNewJob(itrJobMetadata);
         }
 
-        // DELETE <HomeController>/5
+        // PUT [controller]
+        [HttpPut]
+        public async Task Put([FromBody] ITRJobMetadata itrJobMetadata)
+        {
+            await ITRJobSchedulerFactory.ResecheduleJob(itrJobMetadata);
+        }
+
+        // DELETE [controller]/5
         [HttpDelete("{id}")]
         public async Task Delete(int id)
         {

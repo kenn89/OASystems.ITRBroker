@@ -14,7 +14,7 @@ namespace OASystems.ITRBroker
     {
         public static async Task Main(string[] args)
         {
-            await JobSchedulerFactory.InitializeITRJobsAsync();
+            await ITRJobSchedulerFactory.InitializeITRJobsAsync();
 
             CreateHostBuilder(args).Build().Run();
         }

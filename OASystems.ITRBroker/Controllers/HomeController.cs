@@ -14,43 +14,39 @@ namespace OASystems.ITRBroker
     [ApiController]
     public class HomeController : ControllerBase
     {
-        // GET: api/<HomeController>
+        // GET: <HomeController>
         [HttpGet]
         public IEnumerable<string> Get()
         {
             return new string[] { "value1", "value2" };
         }
 
-        // GET api/<ValuesController>/5
+        // GET <ValuesController>/5
         [HttpGet("{id}")]
         public string Get(int id)
         {
             return "value";
         }
 
-        // POST api/<HomeController>
+        // POST <HomeController>
         [HttpPost]
-        public async Task PostAsync([FromBody] Home home)
+        public async Task PostAsync([FromBody] ITRJob itrJob)
         {
-            await JobSchedulerFactory.ResecheduleJob(home.Name, home.CronSchedule);
+            await ITRJobSchedulerFactory.ResecheduleJob(itrJob);
         }
 
-        // PUT api/<HomeController>/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
+        // PUT <HomeController>
+        [HttpPut]
+        public async Task Put([FromBody] ITRJob itrJob)
         {
+            await ITRJobSchedulerFactory.ScheduleNewJob(itrJob);
         }
 
-        // DELETE api/<HomeController>/5
+        // DELETE <HomeController>/5
         [HttpDelete("{id}")]
-        public void Delete(int id)
+        public async Task Delete(int id)
         {
+            await ITRJobSchedulerFactory.DeleteJob(id);
         }
-    }
-
-    public class Home
-    {
-        public string Name { get; set; }
-        public string CronSchedule { get; set; }
     }
 }

@@ -7,62 +7,65 @@ using Quartz.Impl;
 
 namespace OASystems.ITRBroker
 {
-    public class JobSchedulerFactory
+    public class ITRJobSchedulerFactory
     {
         public static IScheduler _scheduler;
+        public static int nextId;
 
         public static async Task InitializeITRJobsAsync()
         {
-            // Get list of itr jobs to do
-            var list = GetITRJobs();
-
-            // Grab the Scheduler instance from the Factory
             StdSchedulerFactory factory = new StdSchedulerFactory();
             _scheduler = await factory.GetScheduler();
+            nextId = 0;
 
-            // and start it off
             await _scheduler.Start();
 
-            foreach (ITRJob job in list)
+            var list = GetITRJobs();
+            foreach (ITRJob itrJob in list)
             {
-                var jobscheduler = GenerateJobScheduler(job);
-
-                // Tell quartz to schedule the job using our trigger
-                await _scheduler.ScheduleJob(jobscheduler.Item1, jobscheduler.Item2);
+                await ScheduleNewJob(itrJob);
             }
         }
 
-        public static async Task ResecheduleJob(string jobName, string cronSchedule)
+        public static async Task ScheduleNewJob(ITRJob itrJob)
         {
-            ITrigger newTrigger = TriggerBuilder.Create()
-                .WithIdentity(jobName)
-                .WithCronSchedule(cronSchedule)
+            itrJob.Id = nextId.ToString();
+            nextId++;
+
+            IJobDetail job = JobBuilder.Create<ITRJobExecution>()
+                .UsingJobData("message", itrJob.Id)
+                .WithIdentity(itrJob.Id)
                 .Build();
 
-            await _scheduler.RescheduleJob(new TriggerKey(jobName), newTrigger);
+            ITrigger trigger = TriggerBuilder.Create()
+                .WithIdentity(itrJob.Id)
+                .WithCronSchedule(itrJob.CronSchedule)
+                .Build();
+
+            await _scheduler.ScheduleJob(job, trigger);
         }
 
-        public static Tuple<IJobDetail, ITrigger> GenerateJobScheduler(ITRJob itrJobDetails)
+        public static async Task ResecheduleJob(ITRJob itrJob)
         {
-            // define the job and tie it to our HelloJob class
-            IJobDetail job = JobBuilder.Create<ITRJobExecution>()
-                .UsingJobData("message", itrJobDetails.name)
-                .WithIdentity(itrJobDetails.name)
+            ITrigger newTrigger = TriggerBuilder.Create()
+                .WithIdentity(itrJob.Id)
+                .WithCronSchedule(itrJob.CronSchedule)
                 .Build();
 
-            // Trigger the job to run now, and then repeat every 10 seconds
-            ITrigger trigger = TriggerBuilder.Create()
-                .WithIdentity(itrJobDetails.name)
-                .WithCronSchedule(itrJobDetails.time)
-                .Build();
+            await _scheduler.RescheduleJob(new TriggerKey(itrJob.Id), newTrigger);
+        }
 
-            return new Tuple<IJobDetail, ITrigger>(job, trigger);
+        public static async Task DeleteJob(int id)
+        {
+            var job = _scheduler.GetJobDetail(new JobKey(id.ToString()));
+
+            await _scheduler.Interrupt(job.Result.Key);
         }
 
         public static List<ITRJob> GetITRJobs()
         {
             List<ITRJob> list = new List<ITRJob>();
-            list.Add(new ITRJob() { name = "Test A", time = "0/5 * * * * ?" });
+            //list.Add(new ITRJob() { Name = "Test A", CronSchedule = "0/5 * * * * ?" });
             //list.Add(new ITRJob() { name = "Test B", time = "0/5 * * * * ?" });
 
             return list;
@@ -71,8 +74,8 @@ namespace OASystems.ITRBroker
 
     public class ITRJob
     {
-        public string name { get; set; }
-        public string time { get; set; }
+        public string Id { get; set; }
+        public string CronSchedule { get; set; }
     }
 
     public class ITRJobExecution : IJob
@@ -80,12 +83,17 @@ namespace OASystems.ITRBroker
         public async Task Execute(IJobExecutionContext context)
         {
             JobDataMap datamap = context.JobDetail.JobDataMap;
-
             string message = datamap.GetString("message");
 
             await TestAPI.DoTestAsync(message);
 
-            //await Console.Out.WriteLineAsync($"Time: {DateTime.Now.ToLocalTime()}, Message: {message}");
+            //while (true)
+            //{
+            //    if (context.CancellationToken.IsCancellationRequested)
+            //    {
+            //        context.CancellationToken.ThrowIfCancellationRequested();
+            //    }
+            //}
         }
     }
 }

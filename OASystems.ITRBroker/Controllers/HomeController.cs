@@ -18,18 +18,18 @@ namespace OASystems.ITRBroker.Controllers
     {
         // GET: <HomeController>
         [HttpGet]
-        public async IAsyncEnumerable<string[]> Get()
+        public IEnumerable<ITRJobMetadata> Get()
         {
-            //await ITRJobSchedulerFactory.GetJobs();
-
-            yield return new string[] { "value1", "value2" };
+            var itrJobMetadataList = ITRJobSchedulerFactory.GetAllJobs();
+            return itrJobMetadataList;
         }
 
         // GET <ValuesController>/5
         [HttpGet("{id}")]
-        public string Get(int id)
+        public ITRJobMetadata Get(int id)
         {
-            return "value";
+            ITRJobMetadata itrJobMetadata = ITRJobSchedulerFactory.GetJobWithId(id.ToString());
+            return itrJobMetadata;
         }
 
         // POST <HomeController>
@@ -50,7 +50,7 @@ namespace OASystems.ITRBroker.Controllers
         [HttpDelete("{id}")]
         public async Task Delete(int id)
         {
-            await ITRJobSchedulerFactory.DeleteJob(id);
+            await ITRJobSchedulerFactory.DeleteJob(id.ToString());
         }
     }
 }

@@ -13,13 +13,17 @@ namespace OASystems.ITRBroker.JobFactory
     public class ITRJobSchedulerFactory
     {
         public static IScheduler _scheduler;
+        public static List<ITRJobMetadata> _itrJobMetadataList;
         public static int nextId;
 
         public static async Task InitializeITRJobsAsync()
         {
             StdSchedulerFactory factory = new StdSchedulerFactory();
             _scheduler = await factory.GetScheduler();
+
             nextId = 0;
+
+            _itrJobMetadataList = new List<ITRJobMetadata>();
 
             await _scheduler.Start();
 
@@ -30,10 +34,14 @@ namespace OASystems.ITRBroker.JobFactory
             }
         }
 
-        public static async Task GetJobs()
+        public static List<ITRJobMetadata> GetAllJobs()
         {
-            var allTriggerKeys = await _scheduler.GetTriggerKeys(GroupMatcher<TriggerKey>.AnyGroup());
-            var itrJobs = allTriggerKeys.ToList();
+            return _itrJobMetadataList;
+        }
+
+        public static ITRJobMetadata GetJobWithId(string id)
+        {
+            return _itrJobMetadataList.Where(x => x.Id == id).FirstOrDefault();
         }
 
         public static async Task ScheduleNewJob(ITRJobMetadata itrJobMetadata)
@@ -52,6 +60,8 @@ namespace OASystems.ITRBroker.JobFactory
                 .Build();
 
             await _scheduler.ScheduleJob(job, trigger);
+
+            _itrJobMetadataList.Add(itrJobMetadata);
         }
 
         public static async Task ResecheduleJob(ITRJobMetadata itrJobMetadata)
@@ -64,11 +74,13 @@ namespace OASystems.ITRBroker.JobFactory
             await _scheduler.RescheduleJob(new TriggerKey(itrJobMetadata.Id), newTrigger);
         }
 
-        public static async Task DeleteJob(int id)
+        public static async Task DeleteJob(string id)
         {
-            var job = _scheduler.GetJobDetail(new JobKey(id.ToString()));
+            var job = _scheduler.GetJobDetail(new JobKey(id));
 
             await _scheduler.DeleteJob(new JobKey(id.ToString()));
+
+            _itrJobMetadataList.RemoveAll(x => x.Id == id);
         }
 
         public static List<ITRJobMetadata> GetITRJobMetadatas()

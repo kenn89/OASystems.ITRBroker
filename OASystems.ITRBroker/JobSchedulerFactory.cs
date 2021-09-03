@@ -9,25 +9,37 @@ namespace OASystems.ITRBroker
 {
     public class JobSchedulerFactory
     {
-        public static async Task ExecuteITRJobsAsync()
+        public static IScheduler _scheduler;
+
+        public static async Task InitializeITRJobsAsync()
         {
             // Get list of itr jobs to do
             var list = GetITRJobs();
 
             // Grab the Scheduler instance from the Factory
             StdSchedulerFactory factory = new StdSchedulerFactory();
-            IScheduler scheduler = await factory.GetScheduler();
+            _scheduler = await factory.GetScheduler();
 
             // and start it off
-            await scheduler.Start();
+            await _scheduler.Start();
 
             foreach (ITRJob job in list)
             {
                 var jobscheduler = GenerateJobScheduler(job);
 
                 // Tell quartz to schedule the job using our trigger
-                await scheduler.ScheduleJob(jobscheduler.Item1, jobscheduler.Item2);
+                await _scheduler.ScheduleJob(jobscheduler.Item1, jobscheduler.Item2);
             }
+        }
+
+        public static async Task ResecheduleJob(string jobName, string cronSchedule)
+        {
+            ITrigger newTrigger = TriggerBuilder.Create()
+                .WithIdentity(jobName)
+                .WithCronSchedule(cronSchedule)
+                .Build();
+
+            await _scheduler.RescheduleJob(new TriggerKey(jobName), newTrigger);
         }
 
         public static Tuple<IJobDetail, ITrigger> GenerateJobScheduler(ITRJob itrJobDetails)
@@ -50,8 +62,8 @@ namespace OASystems.ITRBroker
         public static List<ITRJob> GetITRJobs()
         {
             List<ITRJob> list = new List<ITRJob>();
-            list.Add(new ITRJob() { name = "Test A", time = "0/2 * * * * ?" });
-            list.Add(new ITRJob() { name = "Test B", time = "0/5 * * * * ?" });
+            list.Add(new ITRJob() { name = "Test A", time = "0/5 * * * * ?" });
+            //list.Add(new ITRJob() { name = "Test B", time = "0/5 * * * * ?" });
 
             return list;
         }

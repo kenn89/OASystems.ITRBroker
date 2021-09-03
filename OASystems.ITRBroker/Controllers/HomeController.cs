@@ -8,7 +8,7 @@ using System.Threading;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
-namespace OASystems.ITRBroker.Controllers
+namespace OASystems.ITRBroker
 {
     [Route("/[controller]")]
     [ApiController]
@@ -30,8 +30,9 @@ namespace OASystems.ITRBroker.Controllers
 
         // POST api/<HomeController>
         [HttpPost]
-        public void Post([FromBody] string value)
+        public async Task PostAsync([FromBody] Home home)
         {
+            await JobSchedulerFactory.ResecheduleJob(home.Name, home.CronSchedule);
         }
 
         // PUT api/<HomeController>/5
@@ -45,5 +46,11 @@ namespace OASystems.ITRBroker.Controllers
         public void Delete(int id)
         {
         }
+    }
+
+    public class Home
+    {
+        public string Name { get; set; }
+        public string CronSchedule { get; set; }
     }
 }

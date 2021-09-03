@@ -25,8 +25,6 @@ namespace OASystems.ITRBroker
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddSingleton<IHostedService>(serviceProvider => new Worker(serviceProvider.GetService<ILogger<Worker>>(), "test1", "*/5 * * * * *"));
-            services.AddSingleton<IHostedService>(serviceProvider => new Worker(serviceProvider.GetService<ILogger<Worker>>(), "test2", "*/10 * * * * *"));
             services.AddControllers();
         }
 

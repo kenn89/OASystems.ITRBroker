@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -59,14 +59,12 @@ namespace OASystems.ITRBroker
         {
             var job = _scheduler.GetJobDetail(new JobKey(id.ToString()));
 
-            await _scheduler.Interrupt(job.Result.Key);
+            await _scheduler.DeleteJob(new JobKey(id.ToString()));
         }
 
         public static List<ITRJob> GetITRJobs()
         {
             List<ITRJob> list = new List<ITRJob>();
-            //list.Add(new ITRJob() { Name = "Test A", CronSchedule = "0/5 * * * * ?" });
-            //list.Add(new ITRJob() { name = "Test B", time = "0/5 * * * * ?" });
 
             return list;
         }
@@ -86,14 +84,6 @@ namespace OASystems.ITRBroker
             string message = datamap.GetString("message");
 
             await TestAPI.DoTestAsync(message);
-
-            //while (true)
-            //{
-            //    if (context.CancellationToken.IsCancellationRequested)
-            //    {
-            //        context.CancellationToken.ThrowIfCancellationRequested();
-            //    }
-            //}
         }
     }
 }

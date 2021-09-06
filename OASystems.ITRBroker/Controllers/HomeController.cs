@@ -7,11 +7,13 @@ using Microsoft.Extensions.Hosting;
 using System.Threading;
 using OASystems.ITRBroker.Model;
 using OASystems.ITRBroker.JobFactory;
+using OASystems.ITRBroker.Attributes;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
 namespace OASystems.ITRBroker.Controllers
 {
+    [ApiKey]
     [Route("/[controller]")]
     [ApiController]
     public class HomeController : ControllerBase

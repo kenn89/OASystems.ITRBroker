@@ -10,7 +10,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using OASystems.ITRBroker.Model;
+using OASystems.ITRBroker.Handler;
+using Microsoft.AspNetCore.Authentication;
+using OASystems.ITRBroker.Services;
 
 namespace OASystems.ITRBroker
 {
@@ -26,14 +28,19 @@ namespace OASystems.ITRBroker
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            var dataBaseSettings = Configuration.GetSection("DatabaseSettings");
-            services.Configure<DatabaseSettings>(dataBaseSettings);
-
             services.AddControllers();
+
+            // configure basic authentication 
+            services.AddAuthentication("BasicAuthentication")
+                .AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>("BasicAuthentication", null);
+
+            services.AddScoped<IDatabaseService, DatabaseService>();
+
+            services.AddScoped<ISchedulerService, SchedulerService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IDatabaseService databaseService, ISchedulerService schedulerService)
         {
             if (env.IsDevelopment())
             {
@@ -44,12 +51,15 @@ namespace OASystems.ITRBroker
 
             app.UseRouting();
 
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
             });
+
+            schedulerService.InitializeITRJobScheduler(databaseService);
         }
     }
 }

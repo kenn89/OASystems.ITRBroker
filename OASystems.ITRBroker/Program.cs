@@ -1,22 +1,12 @@
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
-using OASystems.ITRBroker.JobFactory;
 
 namespace OASystems.ITRBroker
 {
     public class Program
     {
-        public static async Task Main(string[] args)
+        public static void Main(string[] args)
         {
-            await ITRJobSchedulerFactory.InitializeITRJobsAsync();
-
             CreateHostBuilder(args).Build().Run();
         }
 

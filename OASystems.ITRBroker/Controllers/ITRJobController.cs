@@ -41,7 +41,7 @@ namespace OASystems.ITRBroker.Controllers
 
         // POST /itrjob
         [HttpPost]
-        public async Task<IActionResult> Post([FromBody] RequestBody body)
+        public async Task<IActionResult> Post([FromBody] ITRJob body)
         {
             if (body.CronSchedule == null && body.IsScheduled == null)
             {

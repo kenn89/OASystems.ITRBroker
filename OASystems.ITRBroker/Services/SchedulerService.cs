@@ -68,7 +68,6 @@ namespace OASystems.ITRBroker.Services
                     }
                 }
             }
-
             return itrJob;
         }
 
@@ -76,7 +75,9 @@ namespace OASystems.ITRBroker.Services
         public async Task ScheduleNewJob(ITRJob itrJob)
         {
             IJobDetail job = JobBuilder.Create<ITRJobProcessService>()
-                .UsingJobData("message", itrJob.Name)
+                .UsingJobData("crmUrl", itrJob.CrmUrl)
+                .UsingJobData("crmClientID", itrJob.CrmClientID)
+                .UsingJobData("crmSecret", itrJob.CrmSecret)
                 .WithIdentity(itrJob.ID.ToString(), itrJob.Name)
                 .Build();
 

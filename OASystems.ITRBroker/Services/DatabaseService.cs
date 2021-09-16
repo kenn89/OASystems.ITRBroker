@@ -105,6 +105,9 @@ namespace OASystems.ITRBroker.Services
                             itrJob.Name = reader.GetString(1);
                             itrJob.CronSchedule = reader.IsDBNull(2) ? String.Empty : reader.GetString(2);
                             itrJob.IsScheduled = reader.GetBoolean(3);
+                            itrJob.CrmUrl = reader.GetString(4);
+                            itrJob.CrmClientID = reader.GetString(5);
+                            itrJob.CrmSecret = reader.GetString(6);
                         }
                     }
                 }
@@ -133,8 +136,11 @@ namespace OASystems.ITRBroker.Services
                                 ID = reader.GetGuid(0),
                                 Name = reader.GetString(1),
                                 CronSchedule = reader.IsDBNull(2) ? String.Empty : reader.GetString(2),
-                                IsScheduled = reader.GetBoolean(3)
-                        };
+                                IsScheduled = reader.GetBoolean(3),
+                                CrmUrl = reader.GetString(4),
+                                CrmClientID = reader.GetString(5),
+                                CrmSecret = reader.GetString(6)
+                            };
                             itrJobs.Add(itrJob);
                         }
                     }

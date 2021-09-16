@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Text.Json.Serialization;
 
-namespace OASystems.ITRBroker.Model
+namespace OASystems.ITRBroker.Models
 {
     public class ITRJob
     {

@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Quartz;
 using Quartz.Impl;
 using Quartz.Impl.Matchers;
-using OASystems.ITRBroker.Model;
+using OASystems.ITRBroker.Models;
 
 namespace OASystems.ITRBroker.Services
 {

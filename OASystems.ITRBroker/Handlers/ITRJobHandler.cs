@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using OASystems.ITRBroker.Services;
-using OASystems.ITRBroker.Model;
+using OASystems.ITRBroker.Models;
 using Quartz;
 
 namespace OASystems.ITRBroker.Handler

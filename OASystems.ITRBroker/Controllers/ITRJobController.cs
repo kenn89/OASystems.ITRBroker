@@ -6,7 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Threading;
 using Microsoft.Extensions.Options;
-using OASystems.ITRBroker.Model;
+using OASystems.ITRBroker.Models;
 using OASystems.ITRBroker.Services;
 using Microsoft.Extensions.Hosting;
 using System.Security.Claims;

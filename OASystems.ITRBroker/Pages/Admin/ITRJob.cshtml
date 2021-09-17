@@ -1,0 +1,66 @@
+﻿@page
+@model OASystems.ITRBroker.Pages.Admin.ITRJobModel
+@{
+    ViewData["Title"] = "ITR Job";
+}
+
+<div class="text-center">
+    <h1 class="display-4">ITR Jobs</h1>
+
+    <table class="table">
+
+        <thead>
+            <tr>
+                <th>
+                    @Html.DisplayNameFor(model => model.ITRJobList[0].Name)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.ITRJobList[0].CrmUrl)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.ITRJobList[0].CronSchedule)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.ITRJobList[0].IsScheduled)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.ITRJobList[0].PreviousFireTimeUtc)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.ITRJobList[0].NextFireTimeUtc)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.ITRJobList[0].IsEnabled)
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.ITRJobList)
+            {
+                <tr>
+                    <td>
+                        @item.Name
+                    </td>
+                    <td>
+                        @item.CrmUrl
+                    </td>
+                    <td>
+                        @item.CronSchedule
+                    </td>
+                    <td>
+                        @item.IsScheduled
+                    </td>
+                    <td>
+                        @(item.PreviousFireTimeUtc.HasValue ? TimeZoneInfo.ConvertTimeFromUtc(item.PreviousFireTimeUtc.Value, TimeZoneInfo.Local).ToString("dd/MM/yyyy HH:mm:ss") : String.Empty)
+                    </td>
+                    <td>
+                        @(item.NextFireTimeUtc.HasValue ? TimeZoneInfo.ConvertTimeFromUtc(item.NextFireTimeUtc.Value, TimeZoneInfo.Local).ToString("dd/MM/yyyy HH:mm:ss") : String.Empty)
+                    </td>
+                    <td>
+                        @item.IsEnabled
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

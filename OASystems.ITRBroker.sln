@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30711.63
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OASystems.ITRBroker", "OASystems.ITRBroker\OASystems.ITRBroker.csproj", "{003C1AE2-63AA-42D7-8359-31CB9284B05B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OASystems.ITRBroker", "OASystems.ITRBroker\OASystems.ITRBroker.csproj", "{003C1AE2-63AA-42D7-8359-31CB9284B05B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

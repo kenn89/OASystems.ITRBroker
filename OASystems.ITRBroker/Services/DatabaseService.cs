@@ -137,9 +137,9 @@ namespace OASystems.ITRBroker.Services
                                 Name = reader.GetString(1),
                                 CronSchedule = reader.IsDBNull(2) ? String.Empty : reader.GetString(2),
                                 IsScheduled = reader.GetBoolean(3),
-                                CrmUrl = reader.GetString(4),
-                                CrmClientID = reader.GetString(5),
-                                CrmSecret = reader.GetString(6),
+                                CrmUrl = reader.IsDBNull(4) ? String.Empty : reader.GetString(4),
+                                CrmClientID = reader.IsDBNull(5) ? String.Empty : reader.GetString(5),
+                                CrmSecret = reader.IsDBNull(6) ? String.Empty : reader.GetString(6),
                                 IsEnabled = reader.GetBoolean(7)
                             };
                             itrJobs.Add(itrJob);

@@ -16,6 +16,7 @@ namespace OASystems.ITRBroker.Services
         Task ScheduleNewJob(ITRJob itrJob);
         Task ResecheduleJob(ITRJob itrJob);
         Task DeleteJob(ITRJob itrJob);
+        List<ITRJob> GetAllScheduledJobs();
     }
 
     public class SchedulerService : ISchedulerService
@@ -41,6 +42,32 @@ namespace OASystems.ITRBroker.Services
                     await ScheduleNewJob(itrJob);
                 }
             }
+        }
+
+        // Use Job Key to retrieve the ITR Job from scheduler
+        public List<ITRJob> GetAllScheduledJobs()
+        {
+            List<ITRJob> itrJobList = new List<ITRJob>();
+
+            var jobKeys = _scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup()).Result;
+
+            foreach (var jobKey in jobKeys)
+            {
+                var triggers = _scheduler.GetTriggersOfJob(jobKey).Result;
+                foreach (var trigger in triggers)
+                {
+                    ITRJob itrJob = new ITRJob();
+                    itrJob.ID = new Guid(jobKey.Name);
+                    itrJob.Name = jobKey.Group;
+                    itrJob.CronSchedule = ((ICronTrigger)trigger).CronExpressionString;
+                    itrJob.PreviousFireTimeUtc = trigger.GetPreviousFireTimeUtc().HasValue ? (DateTime?)trigger.GetPreviousFireTimeUtc().Value.UtcDateTime : null;
+                    itrJob.NextFireTimeUtc = trigger.GetNextFireTimeUtc().HasValue ? (DateTime?)trigger.GetNextFireTimeUtc().Value.UtcDateTime : null;
+                    itrJob.IsScheduled = true;
+
+                    itrJobList.Add(itrJob);
+                }
+            }
+            return itrJobList;
         }
 
         // Use Job Key to retrieve the ITR Job from scheduler

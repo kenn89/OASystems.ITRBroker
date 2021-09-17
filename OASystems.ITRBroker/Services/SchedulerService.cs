@@ -32,11 +32,11 @@ namespace OASystems.ITRBroker.Services
         {
             await _scheduler.Start();
 
-            List<ITRJob> itrJobs = await databaseService.GetAllEnabledITRJobs();
+            List<ITRJob> itrJobs = await databaseService.GetAllITRJobs();
 
             foreach (ITRJob itrJob in itrJobs)
             {
-                if (itrJob.IsScheduled.Value && CronExpression.IsValidExpression(itrJob.CronSchedule))
+                if (itrJob.IsEnabled && itrJob.IsScheduled.Value && CronExpression.IsValidExpression(itrJob.CronSchedule))
                 {
                     await ScheduleNewJob(itrJob);
                 }

@@ -20,5 +20,7 @@ namespace OASystems.ITRBroker.Models
         public string CrmClientID { get; set; }
         [JsonIgnore]
         public string CrmSecret { get; set; }
+        [JsonIgnore]
+        public bool IsEnabled { get; set; }
     }
 }

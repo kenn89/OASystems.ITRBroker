@@ -13,7 +13,7 @@ namespace OASystems.ITRBroker.Services
     {
         Task<ITRJob> Authenticate(string username, string password);
         Task<ITRJob> GetITRJobFromID(Guid itrJobID);
-        Task<List<ITRJob>> GetAllEnabledITRJobs();
+        Task<List<ITRJob>> GetAllITRJobs();
         void UpdateITRJobCronSchedule(Guid itrJobID, string cronSchedule);
         void UpdateITRJobIsScheduled(Guid itrJobID, bool isScheduled);
     }
@@ -52,7 +52,7 @@ namespace OASystems.ITRBroker.Services
             {
                 connection.Open();
 
-                string sql = "EXECUTE [dbo].[GetITRJobFromApiUsernamePassword] @ApiUsername, @ApiPassword";
+                string sql = "EXECUTE [dbo].[Authenticate] @ApiUsername, @ApiPassword";
                 using (SqlCommand command = new SqlCommand(sql, connection))
                 {
                     SqlParameter param1 = new SqlParameter();
@@ -116,7 +116,7 @@ namespace OASystems.ITRBroker.Services
         }
 
         // Get list of all enabled ITR Jobs from Database
-        public async Task<List<ITRJob>> GetAllEnabledITRJobs()
+        public async Task<List<ITRJob>> GetAllITRJobs()
         {
             List<ITRJob> itrJobs = new List<ITRJob>();
 
@@ -124,7 +124,7 @@ namespace OASystems.ITRBroker.Services
             {
                 connection.Open();
 
-                string sql = String.Format("EXECUTE [dbo].[GetAllEnabledITRJobs]");
+                string sql = String.Format("EXECUTE [dbo].[GetAllITRJobs]");
                 using (SqlCommand command = new SqlCommand(sql, connection))
                 {
                     await using (SqlDataReader reader = command.ExecuteReader())
@@ -139,7 +139,8 @@ namespace OASystems.ITRBroker.Services
                                 IsScheduled = reader.GetBoolean(3),
                                 CrmUrl = reader.GetString(4),
                                 CrmClientID = reader.GetString(5),
-                                CrmSecret = reader.GetString(6)
+                                CrmSecret = reader.GetString(6),
+                                IsEnabled = reader.GetBoolean(7)
                             };
                             itrJobs.Add(itrJob);
                         }

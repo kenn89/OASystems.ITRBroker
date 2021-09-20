@@ -5,90 +5,122 @@ using System.Threading.Tasks;
 using OASystems.ITRBroker.Services;
 using OASystems.ITRBroker.Models;
 using Quartz;
+using Microsoft.EntityFrameworkCore;
 
 namespace OASystems.ITRBroker.Handler
 {
-    public static class ITRJobHandler
+    public class ITRJobHandler
     {
-        public static async Task<ITRJob> GetITRJobByIdentifier(IDatabaseService databaseService, ISchedulerService schedulerService, Guid itrJobID)
+        private readonly DatabaseContext _context;
+        private readonly ISchedulerService _schedulerService;
+
+        public ITRJobHandler(DatabaseContext context)
+        {
+            _context = context;
+        }
+
+        public ITRJobHandler(DatabaseContext context, ISchedulerService schedulerService)
+        {
+            _context = context;
+            _schedulerService = schedulerService;
+        }
+
+        public async Task<ITRJob> Authenticate(string username, string password)
+        {
+            return await _context.ITRJob.Where(x => x.ApiUsername == username && x.ApiPassword == password && x.IsEnabled).FirstOrDefaultAsync();
+        }
+
+        public List<ITRJob> GetAllITRJobs()
+        {
+            return _context.ITRJob.ToList();
+        }
+
+        public async Task<ITRJob> GetITRJobByID(Guid itrJobID)
         {
             // Try to get the ITR Job from the scheduler
-            ITRJob itrJobFromScheduler = schedulerService.GetScheduledJobByJobKey(itrJobID.ToString());
+            ITRJob itrJobFromScheduler = _schedulerService.GetScheduledJobByJobKey(itrJobID.ToString());
 
-            // If no scheduled job found, return the ITR Job retrieved from Database, after seting the IsScheduled to false
             if (itrJobFromScheduler == null)
             {
-                // Get ITR Job from Database
-                ITRJob itrJobFromDb = await databaseService.GetITRJobFromID(itrJobID);
+                // If no scheduled job found, return the ITR Job from the Database
+                ITRJob itrJobFromDb = await _context.ITRJob.Where(x => x.ID == itrJobID).FirstOrDefaultAsync();
                 return itrJobFromDb;
             }
-            // If scheduled job is found, return the scheduled job
             else
             {
+                // If scheduled job is found, return the ITR Job from the Scheduler
                 return itrJobFromScheduler;
             }
         }
 
-        public static async Task<ITRJob> UpdateCronSchedule(IDatabaseService databaseService, ISchedulerService schedulerService, ITRJob itrJob, string cronSchedule)
+        public async Task<ITRJob> UpdateITRJob(ITRJob itrJob)
         {
-            if (!Quartz.CronExpression.IsValidExpression(cronSchedule))
+            bool isUpdated = false;
+
+            var itrJobToUpdate = await _context.ITRJob.Where(x => x.ID == itrJob.ID).FirstOrDefaultAsync();
+
+            // Update IsScheduled
+            if (itrJob.IsScheduled.HasValue)
             {
-                throw new Exception("The CronSchedule provided is invalid.");
+                itrJobToUpdate.IsScheduled = itrJob.IsScheduled;
+                isUpdated = true;
             }
 
-            // Update the database
-            databaseService.UpdateITRJobCronSchedule(itrJob.ID, cronSchedule);
+            // Validate and update the CronSchedule
+            if (itrJob.CronSchedule != null)
+            {
+                if (itrJob.CronSchedule == "")
+                {
+                    itrJobToUpdate.CronSchedule = null;
+                    itrJobToUpdate.IsScheduled = false;
+                    isUpdated = true;
+                }
+                else if (CronExpression.IsValidExpression(itrJob.CronSchedule))
+                {
+                    itrJobToUpdate.CronSchedule = itrJob.CronSchedule;
+                    isUpdated = true;
+                }
+                else if (!CronExpression.IsValidExpression(itrJob.CronSchedule))
+                {
+                    throw new Exception("The CronSchedule provided is invalid.");
+                }
+            }
 
-            // Get the ITR Job from the scheduler
-            var itrJobFromScheduler = schedulerService.GetScheduledJobByJobKey(itrJob.ID.ToString());
-            if (itrJobFromScheduler != null && itrJobFromScheduler.CronSchedule != cronSchedule)
+            // Save the changes
+            if (isUpdated)
             {
-                itrJob.CronSchedule = cronSchedule;
-                await schedulerService.ResecheduleJob(itrJob);
-                itrJob = schedulerService.GetScheduledJobByJobKey(itrJob.ID.ToString());
-            }
-            else if (itrJobFromScheduler != null && itrJobFromScheduler.CronSchedule == cronSchedule)
-            {
-                itrJob = itrJobFromScheduler;
-            }
-            else
-            {
-                itrJob = await databaseService.GetITRJobFromID(itrJob.ID);
+                _context.SaveChanges();
+
+                await SyncDbToSchedulerByJobID(itrJob.ID);
+
+                itrJobToUpdate = await _context.ITRJob.Where(x => x.ID == itrJob.ID).FirstOrDefaultAsync();
             }
 
-            return itrJob;
+            return itrJobToUpdate;
         }
 
-        public static async Task<ITRJob> UpdateIsScheduled(IDatabaseService databaseService, ISchedulerService schedulerService, ITRJob itrJob, bool isScheduled)
+        private async Task SyncDbToSchedulerByJobID(Guid itrJobID)
         {
-            // Update the database
-            databaseService.UpdateITRJobIsScheduled(itrJob.ID, isScheduled);
+            ITRJob schJob = _schedulerService.GetScheduledJobByJobKey(itrJobID.ToString());
+            ITRJob dbJob = await _context.ITRJob.Where(x => x.ID == itrJobID).FirstOrDefaultAsync();
 
-            // Get the ITR Job from the scheduler
-            var itrJobFromScheduler = schedulerService.GetScheduledJobByJobKey(itrJob.ID.ToString());
-
-            if (isScheduled)
+            if (dbJob.IsEnabled && dbJob.IsScheduled.Value && schJob == null)
             {
-                if (itrJobFromScheduler == null)
-                {
-                    var itrJobFromDb = await databaseService.GetITRJobFromID(itrJob.ID);
-                    await schedulerService.ScheduleNewJob(itrJobFromDb);
-                }
-
-                itrJob = schedulerService.GetScheduledJobByJobKey(itrJob.ID.ToString());
+                // Schedule new job
+                dbJob.NextFireTimeUtc = (await _schedulerService.ScheduleNewJob(dbJob)).Value.UtcDateTime;
+                _context.SaveChanges();
             }
-            else
+            else if (dbJob.IsEnabled && dbJob.IsScheduled.Value && schJob != null && dbJob.CronSchedule != schJob.CronSchedule)
             {
-                if (itrJobFromScheduler != null)
-                {
-                    // Stop the job in scheduler
-                    await schedulerService.DeleteJob(itrJob);
-                }
-
-                itrJob = await databaseService.GetITRJobFromID(itrJob.ID);
+                // Reschedule the job
+                dbJob.NextFireTimeUtc = (await _schedulerService.ResecheduleJob(dbJob)).Value.UtcDateTime;
+                _context.SaveChanges();
             }
-
-            return itrJob;
+            else if ((!dbJob.IsEnabled || !dbJob.IsScheduled.Value) && schJob != null)
+            {
+                // Stop the job
+                await _schedulerService.DeleteJob(dbJob);
+            }
         }
     }
 }

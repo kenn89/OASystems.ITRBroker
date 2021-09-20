@@ -6,17 +6,18 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using OASystems.ITRBroker.Services;
 using OASystems.ITRBroker.Models;
+using OASystems.ITRBroker.Handler;
 
 namespace OASystems.ITRBroker.Pages.Admin
 {
     public class ITRJobModel : PageModel
     {
-        private readonly IDatabaseService _databaseService;
+        private readonly ITRJobHandler _itrJobHandler;
         private readonly ISchedulerService _schedulerService;
 
-        public ITRJobModel(IDatabaseService databaseService, ISchedulerService schedulerService)
+        public ITRJobModel(DatabaseContext context, ISchedulerService schedulerService)
         {
-            _databaseService = databaseService;
+            _itrJobHandler = new ITRJobHandler(context);
             _schedulerService = schedulerService;
         }
 
@@ -26,7 +27,7 @@ namespace OASystems.ITRBroker.Pages.Admin
         {
             ITRJobList = new List<ITRJob>();
 
-            var itrJobListFromDb = _databaseService.GetAllITRJobs().Result;
+            var itrJobListFromDb = _itrJobHandler.GetAllITRJobs();
             var itrJobListFromScheduler = _schedulerService.GetAllScheduledJobs();
 
             foreach(var itrJobFromDb in itrJobListFromDb)

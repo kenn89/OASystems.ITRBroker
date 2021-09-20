@@ -16,17 +16,17 @@ namespace OASystems.ITRBroker.Handler
 {
     public class BasicAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
     {
-        private readonly IDatabaseService _databaseService;
+        private readonly DatabaseContext _context;
 
         public BasicAuthenticationHandler(
             IOptionsMonitor<AuthenticationSchemeOptions> options,
             ILoggerFactory logger,
             UrlEncoder encoder,
             ISystemClock clock,
-            IDatabaseService databaseService)
+            DatabaseContext context)
             : base(options, logger, encoder, clock)
         {
-            _databaseService = databaseService;
+            _context = context;
         }
 
         protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
@@ -46,7 +46,9 @@ namespace OASystems.ITRBroker.Handler
                 var credentials = Encoding.UTF8.GetString(credentialBytes).Split(new[] { ':' }, 2);
                 var username = credentials[0];
                 var password = credentials[1];
-                itrJob = await _databaseService.Authenticate(username, password);
+
+                var  itrJobHandler = new ITRJobHandler(_context);
+                itrJob =  await itrJobHandler.Authenticate(username, password);
             }
             catch
             {

@@ -19,13 +19,11 @@ namespace OASystems.ITRBroker.Controllers
     [ApiController]
     public class ITRJobController : ControllerBase
     {
-        private readonly IDatabaseService _databaseService;
-        private readonly ISchedulerService _schedulerService;
+        private readonly ITRJobHandler _itrJobHandler;
 
-        public ITRJobController(IDatabaseService databaseService, ISchedulerService schedulerService)
+        public ITRJobController(DatabaseContext context, ISchedulerService schedulerService)
         {
-            _databaseService = databaseService;
-            _schedulerService = schedulerService;
+            _itrJobHandler = new ITRJobHandler(context, schedulerService);
         }
 
         // GET /itrjob
@@ -34,46 +32,26 @@ namespace OASystems.ITRBroker.Controllers
         {
             // Get the ITR Job ID and return the ITR Job details
             Guid itrJobID = new Guid(User.FindFirstValue(ClaimTypes.NameIdentifier));
-            ITRJob itrJob = await ITRJobHandler.GetITRJobByIdentifier(_databaseService, _schedulerService, itrJobID);
+            ITRJob itrJob = await _itrJobHandler.GetITRJobByID(itrJobID);
 
             return itrJob;
         }
 
         // POST /itrjob
         [HttpPost]
-        public async Task<IActionResult> Post([FromBody] ITRJob body)
+        public async Task<IActionResult> Post([FromBody] ITRJob itrJob)
         {
-            if (body.CronSchedule == null && body.IsScheduled == null)
+            try
             {
-                return BadRequest("The request body is invalid.");
+                itrJob.ID = new Guid(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                itrJob.Name = User.FindFirstValue(ClaimTypes.Name);
+                itrJob = await _itrJobHandler.UpdateITRJob(itrJob);
+                return Ok(itrJob);
             }
-
-            ITRJob itrJob = new ITRJob()
+            catch (Exception ex)
             {
-                ID = new Guid(User.FindFirstValue(ClaimTypes.NameIdentifier)),
-                Name = User.FindFirstValue(ClaimTypes.Name)
-            };
-
-            // Update Cron Schedule
-            if (body.CronSchedule != null)
-            {
-                try
-                {
-                    itrJob = await ITRJobHandler.UpdateCronSchedule(_databaseService, _schedulerService, itrJob, body.CronSchedule);
-                }
-                catch (Exception ex)
-                {
-                    return BadRequest(ex.Message);
-                }
+                return BadRequest(ex.Message);
             }
-
-            // Update IsScheduled
-            if (body.IsScheduled != null)
-            {
-                itrJob = await ITRJobHandler.UpdateIsScheduled(_databaseService, _schedulerService, itrJob, body.IsScheduled.Value);
-            }
-
-            return Ok(itrJob);
         }
     }
 }

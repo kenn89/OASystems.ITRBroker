@@ -6,15 +6,16 @@ using Quartz;
 using Quartz.Impl;
 using Quartz.Impl.Matchers;
 using OASystems.ITRBroker.Models;
+using OASystems.ITRBroker.Handler;
 
 namespace OASystems.ITRBroker.Services
 {
     public interface ISchedulerService
     {
-        Task InitializeITRJobScheduler(IDatabaseService databaseService);
+        Task InitializeITRJobScheduler(DatabaseContext context);
         ITRJob GetScheduledJobByJobKey(string jobKeyName);
-        Task ScheduleNewJob(ITRJob itrJob);
-        Task ResecheduleJob(ITRJob itrJob);
+        Task<DateTimeOffset?> ScheduleNewJob(ITRJob itrJob);
+        Task<DateTimeOffset?> ResecheduleJob(ITRJob itrJob);
         Task DeleteJob(ITRJob itrJob);
         List<ITRJob> GetAllScheduledJobs();
     }
@@ -29,11 +30,12 @@ namespace OASystems.ITRBroker.Services
         }
 
         // Get list of enabled ITR Jobs from the database and start running them as scheduled jobs
-        public async Task InitializeITRJobScheduler(IDatabaseService databaseService)
+        public async Task InitializeITRJobScheduler(DatabaseContext context)
         {
             await _scheduler.Start();
 
-            List<ITRJob> itrJobs = await databaseService.GetAllITRJobs();
+            ITRJobHandler itrJobHandler = new ITRJobHandler(context);
+            List<ITRJob> itrJobs = itrJobHandler.GetAllITRJobs();
 
             foreach (ITRJob itrJob in itrJobs)
             {
@@ -99,7 +101,7 @@ namespace OASystems.ITRBroker.Services
         }
 
         // Schedule new ITR Job
-        public async Task ScheduleNewJob(ITRJob itrJob)
+        public async Task<DateTimeOffset?> ScheduleNewJob(ITRJob itrJob)
         {
             IJobDetail job = JobBuilder.Create<ITRJobProcessService>()
                 .UsingJobData("crmUrl", itrJob.CrmUrl)
@@ -114,17 +116,21 @@ namespace OASystems.ITRBroker.Services
                 .Build();
 
             await _scheduler.ScheduleJob(job, trigger);
+
+            return trigger.GetNextFireTimeUtc();
         }
 
         // Reschedule existing ITR Job
-        public async Task ResecheduleJob(ITRJob itrJob)
+        public async Task<DateTimeOffset?> ResecheduleJob(ITRJob itrJob)
         {
-            ITrigger newTrigger = TriggerBuilder.Create()
+            ITrigger trigger = TriggerBuilder.Create()
             .WithIdentity(itrJob.ID.ToString())
             .WithCronSchedule(itrJob.CronSchedule)
             .Build();
 
-            await _scheduler.RescheduleJob(new TriggerKey(itrJob.ID.ToString()), newTrigger);
+            await _scheduler.RescheduleJob(new TriggerKey(itrJob.ID.ToString()), trigger);
+
+            return trigger.GetNextFireTimeUtc();
         }
 
         // Delete an existing Quartz job

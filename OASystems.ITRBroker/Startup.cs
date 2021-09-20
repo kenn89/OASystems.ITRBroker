@@ -1,18 +1,14 @@
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using OASystems.ITRBroker.Handler;
-using Microsoft.AspNetCore.Authentication;
+using OASystems.ITRBroker.Models;
 using OASystems.ITRBroker.Services;
+using System.Data.SqlClient;
 
 namespace OASystems.ITRBroker
 {
@@ -32,17 +28,27 @@ namespace OASystems.ITRBroker
 
             services.AddRazorPages();
 
-            // configure basic authentication 
+            // Configure basic authentication 
             services.AddAuthentication("BasicAuthentication")
                 .AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>("BasicAuthentication", null);
 
-            services.AddScoped<IDatabaseService, DatabaseService>();
-
+            // Configure scheduler
             services.AddScoped<ISchedulerService, SchedulerService>();
+
+            // Configure database context
+            var sqlConnBuilder = new SqlConnectionStringBuilder
+            {
+                DataSource = Configuration["DatabaseSettings:DataSource"],
+                UserID = Configuration["DatabaseSettings:UserID"],
+                Password = Configuration["DatabaseSettings:Password"],
+                InitialCatalog = Configuration["DatabaseSettings:InitialCatalog"]
+            };
+            services.AddDbContext<DatabaseContext>(
+                options => options.UseSqlServer(sqlConnBuilder.ConnectionString));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IDatabaseService databaseService, ISchedulerService schedulerService)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, DatabaseContext context, ISchedulerService schedulerService)
         {
             if (env.IsDevelopment())
             {
@@ -69,7 +75,7 @@ namespace OASystems.ITRBroker
                 endpoints.MapRazorPages();
             });
 
-            schedulerService.InitializeITRJobScheduler(databaseService);
+            schedulerService.InitializeITRJobScheduler(context);
         }
     }
 }

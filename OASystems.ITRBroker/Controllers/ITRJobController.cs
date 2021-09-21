@@ -14,7 +14,7 @@ using OASystems.ITRBroker.Handler;
 
 namespace OASystems.ITRBroker.Controllers
 {
-    [Authorize]
+    [Authorize(AuthenticationSchemes = "BasicAuthentication")]
     [Route("/itrjob")]
     [ApiController]
     public class ITRJobController : ControllerBase

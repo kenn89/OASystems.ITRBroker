@@ -9,6 +9,9 @@ using OASystems.ITRBroker.Handler;
 using OASystems.ITRBroker.Models;
 using OASystems.ITRBroker.Services;
 using System.Data.SqlClient;
+using Microsoft.Identity.Web.UI;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.Identity.Web;
 
 namespace OASystems.ITRBroker
 {
@@ -26,11 +29,20 @@ namespace OASystems.ITRBroker
         {
             services.AddControllers();
 
-            services.AddRazorPages();
+            // Add Authentication
+            services.AddAuthentication(OpenIdConnectDefaults.AuthenticationScheme)
+                .AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>("BasicAuthentication", null)
+                .AddMicrosoftIdentityWebApp(Configuration.GetSection("AzureAd"));
 
-            // Configure basic authentication 
-            services.AddAuthentication("BasicAuthentication")
-                .AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>("BasicAuthentication", null);
+            services.AddAuthorization(options =>
+            {
+                // By default, all incoming requests will be authorized according to the default policy
+                options.FallbackPolicy = options.DefaultPolicy;
+            });
+
+            services.AddRazorPages()
+                .AddMvcOptions(options => { })
+                .AddMicrosoftIdentityUI();
 
             // Configure scheduler
             services.AddScoped<ISchedulerService, SchedulerService>();

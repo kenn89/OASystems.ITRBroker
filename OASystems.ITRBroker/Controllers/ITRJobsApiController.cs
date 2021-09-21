@@ -15,18 +15,18 @@ using OASystems.ITRBroker.Handler;
 namespace OASystems.ITRBroker.Controllers
 {
     [Authorize(AuthenticationSchemes = "BasicAuthentication")]
-    [Route("/itrjob")]
+    [Route("api/itrjobs")]
     [ApiController]
-    public class ITRJobController : ControllerBase
+    public class ITRJobsApiController : ControllerBase
     {
         private readonly ITRJobHandler _itrJobHandler;
 
-        public ITRJobController(DatabaseContext context, ISchedulerService schedulerService)
+        public ITRJobsApiController(DatabaseContext context, ISchedulerService schedulerService)
         {
             _itrJobHandler = new ITRJobHandler(context, schedulerService);
         }
 
-        // GET /itrjob
+        // GET: api/itrjobs
         [HttpGet]
         public async Task<ITRJob> Get()
         {
@@ -37,7 +37,7 @@ namespace OASystems.ITRBroker.Controllers
             return itrJob;
         }
 
-        // POST /itrjob
+        // POST: api/itrjobs
         [HttpPost]
         public async Task<IActionResult> Post([FromBody] ITRJob itrJob)
         {

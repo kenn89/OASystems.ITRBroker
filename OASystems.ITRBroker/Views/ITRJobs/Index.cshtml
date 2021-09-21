@@ -16,21 +16,6 @@
                 @Html.DisplayNameFor(model => model.Name)
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.ApiUsername)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.ApiPassword)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.CrmUrl)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.CrmClientID)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.CrmSecret)
-            </th>
-            <th>
                 @Html.DisplayNameFor(model => model.CronSchedule)
             </th>
             <th>
@@ -55,21 +40,6 @@
                 @Html.DisplayFor(modelItem => item.Name)
             </td>
             <td>
-                @Html.DisplayFor(modelItem => item.ApiUsername)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.ApiPassword)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.CrmUrl)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.CrmClientID)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.CrmSecret)
-            </td>
-            <td>
                 @Html.DisplayFor(modelItem => item.CronSchedule)
             </td>
             <td>
@@ -86,8 +56,8 @@
             </td>
             <td>
                 <a asp-action="Edit" asp-route-id="@item.ID">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.ID">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.ID">Delete</a>
+                <a asp-action="Details" asp-route-id="@item.ID">Details</a>@* |
+                <a asp-action="Delete" asp-route-id="@item.ID">Delete</a>*@
             </td>
         </tr>
 }

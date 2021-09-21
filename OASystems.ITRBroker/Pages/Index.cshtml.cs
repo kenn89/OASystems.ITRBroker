@@ -5,21 +5,45 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using OASystems.ITRBroker.Services;
+using OASystems.ITRBroker.Models;
+using OASystems.ITRBroker.Handler;
 
 namespace OASystems.ITRBroker.Pages
 {
     public class IndexModel : PageModel
     {
-        private readonly ILogger<IndexModel> _logger;
+        private readonly ITRJobHandler _itrJobHandler;
+        private readonly ISchedulerService _schedulerService;
 
-        public IndexModel(ILogger<IndexModel> logger)
+        public List<ITRJob> ITRJobList { get; set; }
+
+        public IndexModel(DatabaseContext context, ISchedulerService schedulerService)
         {
-            _logger = logger;
+            _itrJobHandler = new ITRJobHandler(context);
+            _schedulerService = schedulerService;
         }
 
         public void OnGet()
         {
+            ITRJobList = new List<ITRJob>();
 
+            var itrJobListFromDb = _itrJobHandler.GetAllITRJobs();
+            var itrJobListFromScheduler = _schedulerService.GetAllScheduledJobs();
+
+            foreach (var itrJobFromDb in itrJobListFromDb)
+            {
+                foreach (var itrJobFromScheduler in itrJobListFromScheduler)
+                {
+                    if (itrJobFromDb.ID == itrJobFromScheduler.ID)
+                    {
+                        itrJobFromDb.PreviousFireTimeUtc = itrJobFromScheduler.PreviousFireTimeUtc;
+                        itrJobFromDb.NextFireTimeUtc = itrJobFromScheduler.NextFireTimeUtc;
+                        break;
+                    }
+                }
+                ITRJobList.Add(itrJobFromDb);
+            }
         }
     }
 }

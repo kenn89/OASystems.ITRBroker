@@ -1,0 +1,83 @@
+﻿@model OASystems.ITRBroker.Models.ITRJob
+
+@{
+    ViewData["Title"] = "Create";
+}
+
+<h1>Create</h1>
+
+<h4>ITRJob</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Create">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-group">
+                <label asp-for="Name" class="control-label"></label>
+                <input asp-for="Name" class="form-control" />
+                <span asp-validation-for="Name" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="ApiUsername" class="control-label"></label>
+                <input asp-for="ApiUsername" class="form-control" />
+                <span asp-validation-for="ApiUsername" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="ApiPassword" class="control-label"></label>
+                <input asp-for="ApiPassword" class="form-control" />
+                <span asp-validation-for="ApiPassword" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="CrmUrl" class="control-label"></label>
+                <input asp-for="CrmUrl" class="form-control" />
+                <span asp-validation-for="CrmUrl" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="CrmClientID" class="control-label"></label>
+                <input asp-for="CrmClientID" class="form-control" />
+                <span asp-validation-for="CrmClientID" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="CrmSecret" class="control-label"></label>
+                <input asp-for="CrmSecret" class="form-control" />
+                <span asp-validation-for="CrmSecret" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="CronSchedule" class="control-label"></label>
+                <input asp-for="CronSchedule" class="form-control" />
+                <span asp-validation-for="CronSchedule" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="IsScheduled" class="control-label"></label>
+                <input asp-for="IsScheduled" class="form-control" />
+                <span asp-validation-for="IsScheduled" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="PreviousFireTimeUtc" class="control-label"></label>
+                <input asp-for="PreviousFireTimeUtc" class="form-control" />
+                <span asp-validation-for="PreviousFireTimeUtc" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="NextFireTimeUtc" class="control-label"></label>
+                <input asp-for="NextFireTimeUtc" class="form-control" />
+                <span asp-validation-for="NextFireTimeUtc" class="text-danger"></span>
+            </div>
+            <div class="form-group form-check">
+                <label class="form-check-label">
+                    <input class="form-check-input" asp-for="IsEnabled" /> @Html.DisplayNameFor(model => model.IsEnabled)
+                </label>
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Create" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-action="Index">Back to List</a>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

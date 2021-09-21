@@ -27,7 +27,9 @@ namespace OASystems.ITRBroker
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddControllers();
+            //services.AddControllers();
+
+            services.AddControllersWithViews();
 
             // Add Authentication
             services.AddAuthentication(OpenIdConnectDefaults.AuthenticationScheme)
@@ -81,10 +83,17 @@ namespace OASystems.ITRBroker
             app.UseAuthentication();
             app.UseAuthorization();
 
+            //app.UseEndpoints(endpoints =>
+            //{
+            //    endpoints.MapControllers();
+            //    endpoints.MapRazorPages();
+            //});
+
             app.UseEndpoints(endpoints =>
             {
-                endpoints.MapControllers();
-                endpoints.MapRazorPages();
+                endpoints.MapControllerRoute(
+                    name: "default",
+                    pattern: "{controller=ITRJobs}/{action=Index}/{id?}");
             });
 
             schedulerService.InitializeITRJobScheduler(context);

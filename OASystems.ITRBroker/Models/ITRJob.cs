@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Text.Json.Serialization;
 using System.ComponentModel;
+using OASystems.ITRBroker.Attributes;
 
 namespace OASystems.ITRBroker.Models
 {
@@ -27,6 +28,7 @@ namespace OASystems.ITRBroker.Models
         [JsonIgnore]
         public string CrmSecret { get; set; }
         [DisplayName("Cron Schedule")]
+        [CronExpression]
         public string CronSchedule { get; set; }
         [DisplayName("Scheduled")]
         public bool IsScheduled { get; set; }

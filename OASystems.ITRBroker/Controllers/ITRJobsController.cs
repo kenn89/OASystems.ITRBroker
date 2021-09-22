@@ -6,16 +6,20 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using OASystems.ITRBroker.Models;
+using OASystems.ITRBroker.Services;
+using OASystems.ITRBroker.Handler;
 
 namespace OASystems.ITRBroker.Controllers
 {
     public class ITRJobsController : Controller
     {
         private readonly DatabaseContext _context;
+        private readonly ITRJobHandler _itrJobHandler;
 
-        public ITRJobsController(DatabaseContext context)
+        public ITRJobsController(DatabaseContext context, ISchedulerService schedulerService)
         {
             _context = context;
+            _itrJobHandler = new ITRJobHandler(context, schedulerService);
         }
 
         // GET: ITRJobs
@@ -57,9 +61,11 @@ namespace OASystems.ITRBroker.Controllers
         {
             if (ModelState.IsValid)
             {
+                iTRJob = _itrJobHandler.ValidateCronScheduleAndUpdateITRJob(iTRJob, iTRJob.CronSchedule);
                 iTRJob.ID = Guid.NewGuid();
                 _context.Add(iTRJob);
                 await _context.SaveChangesAsync();
+                await _itrJobHandler.SyncDbToSchedulerByJobID(iTRJob.ID);
                 return RedirectToAction(nameof(Index));
             }
             return View(iTRJob);
@@ -95,6 +101,7 @@ namespace OASystems.ITRBroker.Controllers
 
             if (ModelState.IsValid)
             {
+                iTRJob = _itrJobHandler.ValidateCronScheduleAndUpdateITRJob(iTRJob, iTRJob.CronSchedule);
                 try
                 {
                     _context.Update(iTRJob);
@@ -111,6 +118,7 @@ namespace OASystems.ITRBroker.Controllers
                         throw;
                     }
                 }
+                await _itrJobHandler.SyncDbToSchedulerByJobID(iTRJob.ID);
                 return RedirectToAction(nameof(Index));
             }
             return View(iTRJob);

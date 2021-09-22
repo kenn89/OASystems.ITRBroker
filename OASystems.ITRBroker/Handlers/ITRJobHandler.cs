@@ -69,21 +69,8 @@ namespace OASystems.ITRBroker.Handler
             // Validate and update the CronSchedule
             if (body.CronSchedule != null)
             {
-                if (body.CronSchedule == "")
-                {
-                    itrJob.CronSchedule = null;
-                    itrJob.IsScheduled = false;
-                    isUpdated = true;
-                }
-                else if (CronExpression.IsValidExpression(body.CronSchedule))
-                {
-                    itrJob.CronSchedule = body.CronSchedule;
-                    isUpdated = true;
-                }
-                else if (!CronExpression.IsValidExpression(body.CronSchedule))
-                {
-                    throw new Exception("The CronSchedule provided is invalid.");
-                }
+                itrJob = ValidateCronScheduleAndUpdateITRJob(itrJob, body.CronSchedule);
+                isUpdated = true;
             }
 
             // Save the changes
@@ -99,7 +86,7 @@ namespace OASystems.ITRBroker.Handler
             return itrJob;
         }
 
-        private async Task SyncDbToSchedulerByJobID(Guid itrJobID)
+        public async Task SyncDbToSchedulerByJobID(Guid itrJobID)
         {
             ITRJob schJob = _schedulerService.GetScheduledJobByJobKey(itrJobID.ToString());
             ITRJob dbJob = await _context.ITRJob.Where(x => x.ID == itrJobID).FirstOrDefaultAsync();
@@ -121,6 +108,21 @@ namespace OASystems.ITRBroker.Handler
                 // Stop the job
                 await _schedulerService.DeleteJob(dbJob);
             }
+        }
+
+        public ITRJob ValidateCronScheduleAndUpdateITRJob(ITRJob itrJob, string cronSchedule)
+        {
+            if (cronSchedule == null || cronSchedule == "")
+            {
+                itrJob.CronSchedule = null;
+                itrJob.IsScheduled = false;
+            }
+            else
+            {
+                itrJob.CronSchedule = cronSchedule;
+            }
+
+            return itrJob;
         }
     }
 }

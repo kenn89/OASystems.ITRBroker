@@ -61,14 +61,15 @@
         <dt class = "col-sm-2">
             @Html.DisplayNameFor(model => model.PreviousFireTimeUtc)
         </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.PreviousFireTimeUtc)
+        <dd class="col-sm-10">
+            @(Model.PreviousFireTimeUtc.HasValue ? TimeZoneInfo.ConvertTimeFromUtc(Model.PreviousFireTimeUtc.Value, TimeZoneInfo.Local).ToString("dd/MM/yyyy HH:mm:ss") : String.Empty)
         </dd>
-        <dt class = "col-sm-2">
+        <dt class="col-sm-2">
             @Html.DisplayNameFor(model => model.NextFireTimeUtc)
         </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.NextFireTimeUtc)
+        <dd class="col-sm-10">
+            @*@Html.DisplayFor(model => model.NextFireTimeUtc)*@
+            @(Model.NextFireTimeUtc.HasValue ? TimeZoneInfo.ConvertTimeFromUtc(Model.NextFireTimeUtc.Value, TimeZoneInfo.Local).ToString("dd/MM/yyyy HH:mm:ss") : String.Empty)
         </dd>
         <dt class = "col-sm-2">
             @Html.DisplayNameFor(model => model.IsEnabled)

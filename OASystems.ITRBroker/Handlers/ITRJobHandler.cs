@@ -53,34 +53,34 @@ namespace OASystems.ITRBroker.Handler
             }
         }
 
-        public async Task<ITRJob> UpdateITRJob(ITRJob itrJob)
+        public async Task<ITRJob> UpdateITRJob(RequestBody body)
         {
             bool isUpdated = false;
 
-            var itrJobToUpdate = await _context.ITRJob.Where(x => x.ID == itrJob.ID).FirstOrDefaultAsync();
+            var itrJob = await _context.ITRJob.Where(x => x.ID == body.ID).FirstOrDefaultAsync();
 
             // Update IsScheduled
-            if (itrJob.IsScheduled.HasValue)
+            if (body.IsScheduled.HasValue)
             {
-                itrJobToUpdate.IsScheduled = itrJob.IsScheduled;
+                itrJob.IsScheduled = body.IsScheduled.Value;
                 isUpdated = true;
             }
 
             // Validate and update the CronSchedule
-            if (itrJob.CronSchedule != null)
+            if (body.CronSchedule != null)
             {
-                if (itrJob.CronSchedule == "")
+                if (body.CronSchedule == "")
                 {
-                    itrJobToUpdate.CronSchedule = null;
-                    itrJobToUpdate.IsScheduled = false;
+                    itrJob.CronSchedule = null;
+                    itrJob.IsScheduled = false;
                     isUpdated = true;
                 }
-                else if (CronExpression.IsValidExpression(itrJob.CronSchedule))
+                else if (CronExpression.IsValidExpression(body.CronSchedule))
                 {
-                    itrJobToUpdate.CronSchedule = itrJob.CronSchedule;
+                    itrJob.CronSchedule = body.CronSchedule;
                     isUpdated = true;
                 }
-                else if (!CronExpression.IsValidExpression(itrJob.CronSchedule))
+                else if (!CronExpression.IsValidExpression(body.CronSchedule))
                 {
                     throw new Exception("The CronSchedule provided is invalid.");
                 }
@@ -91,12 +91,12 @@ namespace OASystems.ITRBroker.Handler
             {
                 _context.SaveChanges();
 
-                await SyncDbToSchedulerByJobID(itrJob.ID);
+                await SyncDbToSchedulerByJobID(body.ID);
 
-                itrJobToUpdate = await _context.ITRJob.Where(x => x.ID == itrJob.ID).FirstOrDefaultAsync();
+                itrJob = await _context.ITRJob.Where(x => x.ID == body.ID).FirstOrDefaultAsync();
             }
 
-            return itrJobToUpdate;
+            return itrJob;
         }
 
         private async Task SyncDbToSchedulerByJobID(Guid itrJobID)
@@ -104,19 +104,19 @@ namespace OASystems.ITRBroker.Handler
             ITRJob schJob = _schedulerService.GetScheduledJobByJobKey(itrJobID.ToString());
             ITRJob dbJob = await _context.ITRJob.Where(x => x.ID == itrJobID).FirstOrDefaultAsync();
 
-            if (dbJob.IsEnabled && dbJob.IsScheduled.Value && schJob == null)
+            if (dbJob.IsEnabled && dbJob.IsScheduled && schJob == null)
             {
                 // Schedule new job
                 dbJob.NextFireTimeUtc = (await _schedulerService.ScheduleNewJob(dbJob)).Value.UtcDateTime;
                 _context.SaveChanges();
             }
-            else if (dbJob.IsEnabled && dbJob.IsScheduled.Value && schJob != null && dbJob.CronSchedule != schJob.CronSchedule)
+            else if (dbJob.IsEnabled && dbJob.IsScheduled && schJob != null && dbJob.CronSchedule != schJob.CronSchedule)
             {
                 // Reschedule the job
                 dbJob.NextFireTimeUtc = (await _schedulerService.ResecheduleJob(dbJob)).Value.UtcDateTime;
                 _context.SaveChanges();
             }
-            else if ((!dbJob.IsEnabled || !dbJob.IsScheduled.Value) && schJob != null)
+            else if ((!dbJob.IsEnabled || !dbJob.IsScheduled) && schJob != null)
             {
                 // Stop the job
                 await _schedulerService.DeleteJob(dbJob);

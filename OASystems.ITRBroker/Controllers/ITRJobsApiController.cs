@@ -39,13 +39,13 @@ namespace OASystems.ITRBroker.Controllers
 
         // POST: api/itrjobs
         [HttpPost]
-        public async Task<IActionResult> Post([FromBody] ITRJob itrJob)
+        public async Task<IActionResult> Post([FromBody] RequestBody body)
         {
             try
             {
-                itrJob.ID = new Guid(User.FindFirstValue(ClaimTypes.NameIdentifier));
-                itrJob.Name = User.FindFirstValue(ClaimTypes.Name);
-                itrJob = await _itrJobHandler.UpdateITRJob(itrJob);
+                body.ID = new Guid(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                body.Name = User.FindFirstValue(ClaimTypes.Name);
+                var itrJob = await _itrJobHandler.UpdateITRJob(body);
                 return Ok(itrJob);
             }
             catch (Exception ex)

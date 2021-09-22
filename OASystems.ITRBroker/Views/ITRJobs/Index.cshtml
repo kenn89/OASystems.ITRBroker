@@ -46,18 +46,18 @@
                 @Html.DisplayFor(modelItem => item.IsScheduled)
             </td>
             <td>
-                @Html.DisplayFor(modelItem => item.PreviousFireTimeUtc)
+                @(item.PreviousFireTimeUtc.HasValue ? TimeZoneInfo.ConvertTimeFromUtc(item.PreviousFireTimeUtc.Value, TimeZoneInfo.Local).ToString("dd/MM/yyyy HH:mm:ss") : String.Empty)
             </td>
             <td>
-                @Html.DisplayFor(modelItem => item.NextFireTimeUtc)
+                @(item.NextFireTimeUtc.HasValue ? TimeZoneInfo.ConvertTimeFromUtc(item.NextFireTimeUtc.Value, TimeZoneInfo.Local).ToString("dd/MM/yyyy HH:mm:ss") : String.Empty)
             </td>
             <td>
                 @Html.DisplayFor(modelItem => item.IsEnabled)
             </td>
             <td>
                 <a asp-action="Edit" asp-route-id="@item.ID">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.ID">Details</a>@* |
-                <a asp-action="Delete" asp-route-id="@item.ID">Delete</a>*@
+                <a asp-action="Details" asp-route-id="@item.ID">Details</a> |
+                <a asp-action="Delete" asp-route-id="@item.ID">Delete</a>
             </td>
         </tr>
 }

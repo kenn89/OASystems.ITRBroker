@@ -29,7 +29,7 @@ namespace OASystems.ITRBroker.Models
         [DisplayName("Cron Schedule")]
         public string CronSchedule { get; set; }
         [DisplayName("Scheduled")]
-        public bool? IsScheduled { get; set; }
+        public bool IsScheduled { get; set; }
         [DisplayName("Previous Run Time")]
         public DateTime? PreviousFireTimeUtc { get; set; }
         [DisplayName("Next Run Time")]

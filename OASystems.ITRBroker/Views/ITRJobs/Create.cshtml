@@ -47,20 +47,10 @@
                 <input asp-for="CronSchedule" class="form-control" />
                 <span asp-validation-for="CronSchedule" class="text-danger"></span>
             </div>
-            <div class="form-group">
-                <label asp-for="IsScheduled" class="control-label"></label>
-                <input asp-for="IsScheduled" class="form-control" />
-                <span asp-validation-for="IsScheduled" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="PreviousFireTimeUtc" class="control-label"></label>
-                <input asp-for="PreviousFireTimeUtc" class="form-control" />
-                <span asp-validation-for="PreviousFireTimeUtc" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="NextFireTimeUtc" class="control-label"></label>
-                <input asp-for="NextFireTimeUtc" class="form-control" />
-                <span asp-validation-for="NextFireTimeUtc" class="text-danger"></span>
+            <div class="form-group form-check">
+                <label class="form-check-label">
+                    <input class="form-check-input" asp-for="IsScheduled" /> @Html.DisplayNameFor(model => model.IsScheduled)
+                </label>
             </div>
             <div class="form-group form-check">
                 <label class="form-check-label">

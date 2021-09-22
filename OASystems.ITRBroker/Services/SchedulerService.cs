@@ -39,7 +39,7 @@ namespace OASystems.ITRBroker.Services
 
             foreach (ITRJob itrJob in itrJobs)
             {
-                if (itrJob.IsEnabled && itrJob.IsScheduled.Value && CronExpression.IsValidExpression(itrJob.CronSchedule))
+                if (itrJob.IsEnabled && itrJob.IsScheduled && CronExpression.IsValidExpression(itrJob.CronSchedule))
                 {
                     await ScheduleNewJob(itrJob);
                 }

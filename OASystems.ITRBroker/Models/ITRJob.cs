@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Text.Json.Serialization;
 using System.ComponentModel;
 using OASystems.ITRBroker.Attributes;
+using System.ComponentModel.DataAnnotations;
 
 namespace OASystems.ITRBroker.Models
 {
@@ -13,6 +14,7 @@ namespace OASystems.ITRBroker.Models
         [JsonIgnore]
         public Guid ID { get; set; }
         [DisplayName("Name")]
+        [Required]
         public string Name { get; set; }
         [DisplayName("API Username")]
         [JsonIgnore]

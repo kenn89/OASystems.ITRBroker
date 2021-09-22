@@ -1,16 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Threading;
-using Microsoft.Extensions.Options;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using OASystems.ITRBroker.Handler;
 using OASystems.ITRBroker.Models;
 using OASystems.ITRBroker.Services;
-using Microsoft.Extensions.Hosting;
+using System;
 using System.Security.Claims;
-using OASystems.ITRBroker.Handler;
+using System.Threading.Tasks;
 
 namespace OASystems.ITRBroker.Controllers
 {
@@ -41,6 +36,7 @@ namespace OASystems.ITRBroker.Controllers
         [HttpPost]
         public async Task<IActionResult> Post([FromBody] RequestBody body)
         {
+            var test = TryValidateModel(body);
             try
             {
                 body.ID = new Guid(User.FindFirstValue(ClaimTypes.NameIdentifier));

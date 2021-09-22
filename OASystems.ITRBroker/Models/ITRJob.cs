@@ -1,15 +1,14 @@
-﻿using System;
+﻿using OASystems.ITRBroker.Attributes;
+using Quartz;
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Text.Json.Serialization;
 using System.ComponentModel;
-using OASystems.ITRBroker.Attributes;
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace OASystems.ITRBroker.Models
 {
-    public class ITRJob
+    public class ITRJob : IValidatableObject
     {
         [JsonIgnore]
         public Guid ID { get; set; }
@@ -18,16 +17,21 @@ namespace OASystems.ITRBroker.Models
         public string Name { get; set; }
         [DisplayName("API Username")]
         [JsonIgnore]
+        [Required]
         public string ApiUsername { get; set; }
         [DisplayName("API Password")]
         [JsonIgnore]
+        [Required]
         public string ApiPassword { get; set; }
         [DisplayName("CRM URL")]
         [JsonIgnore]
+        [Required]
         public string CrmUrl { get; set; }
         [JsonIgnore]
+        [Required]
         public string CrmClientID { get; set; }
         [JsonIgnore]
+        [Required]
         public string CrmSecret { get; set; }
         [DisplayName("Cron Schedule")]
         [CronExpression]
@@ -41,5 +45,13 @@ namespace OASystems.ITRBroker.Models
         [DisplayName("Enabled")]
         [JsonIgnore]
         public bool IsEnabled { get; set; }
+
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            if (IsScheduled && (CronSchedule == null || !CronExpression.IsValidExpression(CronSchedule)))
+            {
+                yield return new ValidationResult("The \"CronSchedule\" field must contain a valid Cron Expression when the \"IsScheduled\" field is set to true.");
+            }
+        }
     }
 }

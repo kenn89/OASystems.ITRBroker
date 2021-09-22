@@ -1,13 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using OASystems.ITRBroker.Handler;
 using OASystems.ITRBroker.Models;
 using OASystems.ITRBroker.Services;
-using OASystems.ITRBroker.Handler;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace OASystems.ITRBroker.Controllers
 {
@@ -61,7 +59,6 @@ namespace OASystems.ITRBroker.Controllers
         {
             if (ModelState.IsValid)
             {
-                itrJob = _itrJobHandler.ValidateCronScheduleAndUpdateITRJob(itrJob, itrJob.CronSchedule);
                 itrJob.ID = Guid.NewGuid();
                 _context.Add(itrJob);
                 await _context.SaveChangesAsync();
@@ -101,7 +98,6 @@ namespace OASystems.ITRBroker.Controllers
 
             if (ModelState.IsValid)
             {
-                itrJob = _itrJobHandler.ValidateCronScheduleAndUpdateITRJob(itrJob, itrJob.CronSchedule);
                 try
                 {
                     _context.Update(itrJob);

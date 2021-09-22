@@ -1,11 +1,11 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore;
+using OASystems.ITRBroker.Models;
+using OASystems.ITRBroker.Services;
+using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
-using OASystems.ITRBroker.Services;
-using OASystems.ITRBroker.Models;
-using Quartz;
-using Microsoft.EntityFrameworkCore;
 
 namespace OASystems.ITRBroker.Handler
 {
@@ -69,18 +69,27 @@ namespace OASystems.ITRBroker.Handler
             // Validate and update the CronSchedule
             if (body.CronSchedule != null)
             {
-                itrJob = ValidateCronScheduleAndUpdateITRJob(itrJob, body.CronSchedule);
+                //itrJob = ValidateCronScheduleAndUpdateITRJob(itrJob, body.CronSchedule);
+                itrJob.CronSchedule = body.CronSchedule;
                 isUpdated = true;
             }
 
             // Save the changes
             if (isUpdated)
             {
-                _context.SaveChanges();
+                var validationResult = IsITRJobModelValid(itrJob);
+                if (validationResult.Item1)
+                {
+                    _context.SaveChanges();
 
-                await SyncDbToSchedulerByJobID(body.ID);
+                    await SyncDbToSchedulerByJobID(body.ID);
 
-                itrJob = await _context.ITRJob.Where(x => x.ID == body.ID).FirstOrDefaultAsync();
+                    itrJob = await _context.ITRJob.Where(x => x.ID == body.ID).FirstOrDefaultAsync();
+                }
+                else
+                {
+                    throw new Exception(validationResult.Item2);
+                }
             }
 
             return itrJob;
@@ -110,19 +119,21 @@ namespace OASystems.ITRBroker.Handler
             }
         }
 
-        public ITRJob ValidateCronScheduleAndUpdateITRJob(ITRJob itrJob, string cronSchedule)
+        private Tuple<bool, string> IsITRJobModelValid(ITRJob itrJob)
         {
-            if (cronSchedule == null || cronSchedule == "")
+            var context = new ValidationContext(itrJob, null, null);
+            var results = new List<ValidationResult>();
+
+            var isValid = Validator.TryValidateObject(itrJob, context, results, true);
+
+            var errormessage = "";
+
+            foreach(var result in results)
             {
-                itrJob.CronSchedule = null;
-                itrJob.IsScheduled = false;
-            }
-            else
-            {
-                itrJob.CronSchedule = cronSchedule;
+                errormessage = errormessage + "\n" + result.ErrorMessage;
             }
 
-            return itrJob;
+            return new Tuple<bool, string>(isValid, errormessage.Trim());
         }
     }
 }

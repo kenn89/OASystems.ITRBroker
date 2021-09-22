@@ -1,17 +1,16 @@
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Identity.Web;
+using Microsoft.Identity.Web.UI;
 using OASystems.ITRBroker.Handler;
 using OASystems.ITRBroker.Models;
 using OASystems.ITRBroker.Services;
-using System.Data.SqlClient;
-using Microsoft.Identity.Web.UI;
-using Microsoft.AspNetCore.Authentication.OpenIdConnect;
-using Microsoft.Identity.Web;
 
 namespace OASystems.ITRBroker
 {
@@ -29,9 +28,6 @@ namespace OASystems.ITRBroker
         {
             services.AddControllers();
 
-            services.AddControllersWithViews();
-
-            // Add Authentication
             services.AddAuthentication(OpenIdConnectDefaults.AuthenticationScheme)
                 .AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>("BasicAuthentication", null)
                 .AddMicrosoftIdentityWebApp(Configuration.GetSection("AzureAd"));
@@ -43,22 +39,18 @@ namespace OASystems.ITRBroker
             });
 
             services.AddRazorPages()
-                .AddMvcOptions(options => { })
                 .AddMicrosoftIdentityUI();
+
+            // Configure database context
+            var server = Configuration["DatabaseConnection:Server"];
+            var database = Configuration["DatabaseConnection:Database"];
+            var userId = Configuration["DatabaseConnection:UserId"];
+            var password = Configuration["DatabaseConnection:Password"];
+            services.AddDbContext<DatabaseContext>(
+                options => options.UseSqlServer($"Server={server};Database={database};User Id={userId};Password={password}"));
 
             // Configure scheduler
             services.AddScoped<ISchedulerService, SchedulerService>();
-
-            // Configure database context
-            var sqlConnBuilder = new SqlConnectionStringBuilder
-            {
-                DataSource = Configuration["DatabaseSettings:DataSource"],
-                UserID = Configuration["DatabaseSettings:UserID"],
-                Password = Configuration["DatabaseSettings:Password"],
-                InitialCatalog = Configuration["DatabaseSettings:InitialCatalog"]
-            };
-            services.AddDbContext<DatabaseContext>(
-                options => options.UseSqlServer(sqlConnBuilder.ConnectionString));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

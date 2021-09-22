@@ -36,14 +36,14 @@ namespace OASystems.ITRBroker.Controllers
                 return NotFound();
             }
 
-            var iTRJob = await _context.ITRJob
+            var itrJob = await _context.ITRJob
                 .FirstOrDefaultAsync(m => m.ID == id);
-            if (iTRJob == null)
+            if (itrJob == null)
             {
                 return NotFound();
             }
 
-            return View(iTRJob);
+            return View(itrJob);
         }
 
         // GET: ITRJobs/Create
@@ -57,18 +57,18 @@ namespace OASystems.ITRBroker.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("ID,Name,ApiUsername,ApiPassword,CrmUrl,CrmClientID,CrmSecret,CronSchedule,IsScheduled,PreviousFireTimeUtc,NextFireTimeUtc,IsEnabled")] ITRJob iTRJob)
+        public async Task<IActionResult> Create([Bind("ID,Name,ApiUsername,ApiPassword,CrmUrl,CrmClientID,CrmSecret,CronSchedule,IsScheduled,PreviousFireTimeUtc,NextFireTimeUtc,IsEnabled")] ITRJob itrJob)
         {
             if (ModelState.IsValid)
             {
-                iTRJob = _itrJobHandler.ValidateCronScheduleAndUpdateITRJob(iTRJob, iTRJob.CronSchedule);
-                iTRJob.ID = Guid.NewGuid();
-                _context.Add(iTRJob);
+                itrJob = _itrJobHandler.ValidateCronScheduleAndUpdateITRJob(itrJob, itrJob.CronSchedule);
+                itrJob.ID = Guid.NewGuid();
+                _context.Add(itrJob);
                 await _context.SaveChangesAsync();
-                await _itrJobHandler.SyncDbToSchedulerByJobID(iTRJob.ID);
+                await _itrJobHandler.SyncDbToSchedulerByJobID(itrJob.ID);
                 return RedirectToAction(nameof(Index));
             }
-            return View(iTRJob);
+            return View(itrJob);
         }
 
         // GET: ITRJobs/Edit/5
@@ -79,12 +79,12 @@ namespace OASystems.ITRBroker.Controllers
                 return NotFound();
             }
 
-            var iTRJob = await _context.ITRJob.FindAsync(id);
-            if (iTRJob == null)
+            var itrJob = await _context.ITRJob.FindAsync(id);
+            if (itrJob == null)
             {
                 return NotFound();
             }
-            return View(iTRJob);
+            return View(itrJob);
         }
 
         // POST: ITRJobs/Edit/5
@@ -92,24 +92,24 @@ namespace OASystems.ITRBroker.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(Guid id, [Bind("ID,Name,ApiUsername,ApiPassword,CrmUrl,CrmClientID,CrmSecret,CronSchedule,IsScheduled,PreviousFireTimeUtc,NextFireTimeUtc,IsEnabled")] ITRJob iTRJob)
+        public async Task<IActionResult> Edit(Guid id, [Bind("ID,Name,ApiUsername,ApiPassword,CrmUrl,CrmClientID,CrmSecret,CronSchedule,IsScheduled,PreviousFireTimeUtc,NextFireTimeUtc,IsEnabled")] ITRJob itrJob)
         {
-            if (id != iTRJob.ID)
+            if (id != itrJob.ID)
             {
                 return NotFound();
             }
 
             if (ModelState.IsValid)
             {
-                iTRJob = _itrJobHandler.ValidateCronScheduleAndUpdateITRJob(iTRJob, iTRJob.CronSchedule);
+                itrJob = _itrJobHandler.ValidateCronScheduleAndUpdateITRJob(itrJob, itrJob.CronSchedule);
                 try
                 {
-                    _context.Update(iTRJob);
+                    _context.Update(itrJob);
                     await _context.SaveChangesAsync();
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!ITRJobExists(iTRJob.ID))
+                    if (!ITRJobExists(itrJob.ID))
                     {
                         return NotFound();
                     }
@@ -118,10 +118,10 @@ namespace OASystems.ITRBroker.Controllers
                         throw;
                     }
                 }
-                await _itrJobHandler.SyncDbToSchedulerByJobID(iTRJob.ID);
+                await _itrJobHandler.SyncDbToSchedulerByJobID(itrJob.ID);
                 return RedirectToAction(nameof(Index));
             }
-            return View(iTRJob);
+            return View(itrJob);
         }
 
         // GET: ITRJobs/Delete/5
@@ -132,14 +132,14 @@ namespace OASystems.ITRBroker.Controllers
                 return NotFound();
             }
 
-            var iTRJob = await _context.ITRJob
+            var itrJob = await _context.ITRJob
                 .FirstOrDefaultAsync(m => m.ID == id);
-            if (iTRJob == null)
+            if (itrJob == null)
             {
                 return NotFound();
             }
 
-            return View(iTRJob);
+            return View(itrJob);
         }
 
         // POST: ITRJobs/Delete/5
@@ -147,8 +147,8 @@ namespace OASystems.ITRBroker.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(Guid id)
         {
-            var iTRJob = await _context.ITRJob.FindAsync(id);
-            _context.ITRJob.Remove(iTRJob);
+            var itrJob = await _context.ITRJob.FindAsync(id);
+            _context.ITRJob.Remove(itrJob);
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }

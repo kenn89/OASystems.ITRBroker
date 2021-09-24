@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using OASystems.ITRBroker.Handler;
 using OASystems.ITRBroker.Models;
 using OASystems.ITRBroker.Services;
 using System;
@@ -9,24 +8,24 @@ using System.Threading.Tasks;
 
 namespace OASystems.ITRBroker.Controllers
 {
-    public class ITRJobsController : Controller
+    public class ITRJobMetadataController : Controller
     {
         private readonly DatabaseContext _context;
-        private readonly ITRJobHandler _itrJobHandler;
+        private readonly ISchedulerService _schedulerService;
 
-        public ITRJobsController(DatabaseContext context, ISchedulerService schedulerService)
+        public ITRJobMetadataController(DatabaseContext context, ISchedulerService schedulerService)
         {
             _context = context;
-            _itrJobHandler = new ITRJobHandler(context, schedulerService);
+            _schedulerService = schedulerService;
         }
 
-        // GET: ITRJobs
+        // GET: ITRJobMetadata
         public async Task<IActionResult> Index()
         {
-            return View(await _context.ITRJob.ToListAsync());
+            return View(await _context.ITRJobMetadata.ToListAsync());
         }
 
-        // GET: ITRJobs/Details/5
+        // GET: ITRJobMetadata/Details/5
         public async Task<IActionResult> Details(Guid? id)
         {
             if (id == null)
@@ -34,41 +33,41 @@ namespace OASystems.ITRBroker.Controllers
                 return NotFound();
             }
 
-            var itrJob = await _context.ITRJob
+            var iTRJobMetadata = await _context.ITRJobMetadata
                 .FirstOrDefaultAsync(m => m.ID == id);
-            if (itrJob == null)
+            if (iTRJobMetadata == null)
             {
                 return NotFound();
             }
 
-            return View(itrJob);
+            return View(iTRJobMetadata);
         }
 
-        // GET: ITRJobs/Create
+        // GET: ITRJobMetadata/Create
         public IActionResult Create()
         {
             return View();
         }
 
-        // POST: ITRJobs/Create
+        // POST: ITRJobMetadata/Create
         // To protect from overposting attacks, enable the specific properties you want to bind to.
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("ID,Name,ApiUsername,ApiPassword,CrmUrl,CrmClientID,CrmSecret,CronSchedule,IsScheduled,PreviousFireTimeUtc,NextFireTimeUtc,IsEnabled")] ITRJob itrJob)
+        public async Task<IActionResult> Create([Bind("ID,Name,ApiUsername,ApiPassword,CrmUrl,CrmClientID,CrmSecret,CronSchedule,IsScheduled,PreviousFireTimeUtc,NextFireTimeUtc,IsEnabled")] ITRJobMetadata iTRJobMetadata)
         {
             if (ModelState.IsValid)
             {
-                itrJob.ID = Guid.NewGuid();
-                _context.Add(itrJob);
+                iTRJobMetadata.ID = Guid.NewGuid();
+                _context.Add(iTRJobMetadata);
                 await _context.SaveChangesAsync();
-                await _itrJobHandler.SyncDbToSchedulerByJobID(itrJob.ID);
+                await _schedulerService.SyncDbToSchedulerById(_context, iTRJobMetadata.ID);
                 return RedirectToAction(nameof(Index));
             }
-            return View(itrJob);
+            return View(iTRJobMetadata);
         }
 
-        // GET: ITRJobs/Edit/5
+        // GET: ITRJobMetadata/Edit/5
         public async Task<IActionResult> Edit(Guid? id)
         {
             if (id == null)
@@ -76,22 +75,22 @@ namespace OASystems.ITRBroker.Controllers
                 return NotFound();
             }
 
-            var itrJob = await _context.ITRJob.FindAsync(id);
-            if (itrJob == null)
+            var iTRJobMetadata = await _context.ITRJobMetadata.FindAsync(id);
+            if (iTRJobMetadata == null)
             {
                 return NotFound();
             }
-            return View(itrJob);
+            return View(iTRJobMetadata);
         }
 
-        // POST: ITRJobs/Edit/5
+        // POST: ITRJobMetadata/Edit/5
         // To protect from overposting attacks, enable the specific properties you want to bind to.
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(Guid id, [Bind("ID,Name,ApiUsername,ApiPassword,CrmUrl,CrmClientID,CrmSecret,CronSchedule,IsScheduled,PreviousFireTimeUtc,NextFireTimeUtc,IsEnabled")] ITRJob itrJob)
+        public async Task<IActionResult> Edit(Guid id, [Bind("ID,Name,ApiUsername,ApiPassword,CrmUrl,CrmClientID,CrmSecret,CronSchedule,IsScheduled,PreviousFireTimeUtc,NextFireTimeUtc,IsEnabled")] ITRJobMetadata iTRJobMetadata)
         {
-            if (id != itrJob.ID)
+            if (id != iTRJobMetadata.ID)
             {
                 return NotFound();
             }
@@ -100,12 +99,12 @@ namespace OASystems.ITRBroker.Controllers
             {
                 try
                 {
-                    _context.Update(itrJob);
+                    _context.Update(iTRJobMetadata);
                     await _context.SaveChangesAsync();
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!ITRJobExists(itrJob.ID))
+                    if (!ITRJobExists(iTRJobMetadata.ID))
                     {
                         return NotFound();
                     }
@@ -114,13 +113,13 @@ namespace OASystems.ITRBroker.Controllers
                         throw;
                     }
                 }
-                await _itrJobHandler.SyncDbToSchedulerByJobID(itrJob.ID);
+                await _schedulerService.SyncDbToSchedulerById(_context, iTRJobMetadata.ID);
                 return RedirectToAction(nameof(Index));
             }
-            return View(itrJob);
+            return View(iTRJobMetadata);
         }
 
-        // GET: ITRJobs/Delete/5
+        // GET: ITRJobMetadata/Delete/5
         public async Task<IActionResult> Delete(Guid? id)
         {
             if (id == null)
@@ -128,30 +127,30 @@ namespace OASystems.ITRBroker.Controllers
                 return NotFound();
             }
 
-            var itrJob = await _context.ITRJob
+            var iTRJobMetadata = await _context.ITRJobMetadata
                 .FirstOrDefaultAsync(m => m.ID == id);
-            if (itrJob == null)
+            if (iTRJobMetadata == null)
             {
                 return NotFound();
             }
 
-            return View(itrJob);
+            return View(iTRJobMetadata);
         }
 
-        // POST: ITRJobs/Delete/5
+        // POST: ITRJobMetadata/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(Guid id)
         {
-            var itrJob = await _context.ITRJob.FindAsync(id);
-            _context.ITRJob.Remove(itrJob);
+            var iTRJobMetadata = await _context.ITRJobMetadata.FindAsync(id);
+            _context.ITRJobMetadata.Remove(iTRJobMetadata);
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
         private bool ITRJobExists(Guid id)
         {
-            return _context.ITRJob.Any(e => e.ID == id);
+            return _context.ITRJobMetadata.Any(e => e.ID == id);
         }
     }
 }

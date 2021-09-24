@@ -9,10 +9,6 @@ namespace OASystems.ITRBroker.Models
 {
     public class RequestBody
     {
-        [JsonIgnore]
-        public Guid ID { get; set; }
-        [JsonIgnore]
-        public string Name { get; set; }
         [CronExpression]
         public string CronSchedule { get; set; }
         public bool? IsScheduled { get; set; }

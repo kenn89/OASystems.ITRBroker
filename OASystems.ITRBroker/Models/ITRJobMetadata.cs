@@ -8,7 +8,7 @@ using System.Text.Json.Serialization;
 
 namespace OASystems.ITRBroker.Models
 {
-    public class ITRJob : IValidatableObject
+    public class ITRJobMetadata : IValidatableObject
     {
         [JsonIgnore]
         public Guid ID { get; set; }

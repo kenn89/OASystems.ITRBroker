@@ -21,6 +21,6 @@ namespace OASystems.ITRBroker.Models
         {
         }
 
-        public DbSet<ITRJob> ITRJob { get; set; }
+        public DbSet<ITRJobMetadata> ITRJobMetadata { get; set; }
     }
 }

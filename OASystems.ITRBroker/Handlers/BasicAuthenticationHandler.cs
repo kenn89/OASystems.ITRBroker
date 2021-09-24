@@ -1,16 +1,17 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using OASystems.ITRBroker.Models;
+using System;
+using System.Linq;
 using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using OASystems.ITRBroker.Services;
-using OASystems.ITRBroker.Models;
 
 namespace OASystems.ITRBroker.Handler
 {
@@ -38,7 +39,7 @@ namespace OASystems.ITRBroker.Handler
             if (!Request.Headers.ContainsKey("Authorization"))
                 return AuthenticateResult.Fail("Missing Authorization Header");
 
-            ITRJob itrJob;
+            ITRJobMetadata iTRJobMetadata;
             try
             {
                 var authHeader = AuthenticationHeaderValue.Parse(Request.Headers["Authorization"]);
@@ -47,20 +48,19 @@ namespace OASystems.ITRBroker.Handler
                 var username = credentials[0];
                 var password = credentials[1];
 
-                var  itrJobHandler = new ITRJobHandler(_context);
-                itrJob =  await itrJobHandler.Authenticate(username, password);
+                iTRJobMetadata = await _context.ITRJobMetadata.Where(x => x.ApiUsername == username && x.ApiPassword == password && x.IsEnabled).FirstOrDefaultAsync();
             }
             catch
             {
                 return AuthenticateResult.Fail("Invalid Authorization Header");
             }
 
-            if (itrJob == null)
+            if (iTRJobMetadata == null)
                 return AuthenticateResult.Fail("Invalid Username or Password");
 
             var claims = new[] {
-                new Claim(ClaimTypes.NameIdentifier, itrJob.ID.ToString()),
-                new Claim(ClaimTypes.Name, itrJob.Name),
+                new Claim(ClaimTypes.NameIdentifier, iTRJobMetadata.ID.ToString()),
+                new Claim(ClaimTypes.Name, iTRJobMetadata.Name),
             };
             var identity = new ClaimsIdentity(claims, Scheme.Name);
             var principal = new ClaimsPrincipal(identity);

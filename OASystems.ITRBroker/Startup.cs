@@ -50,7 +50,7 @@ namespace OASystems.ITRBroker
                 options => options.UseSqlServer($"Server={server};Database={database};User Id={userId};Password={password}"));
 
             // Configure scheduler
-            services.AddScoped<ISchedulerService, SchedulerService>();
+            services.AddSingleton<ISchedulerService, SchedulerService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -79,7 +79,7 @@ namespace OASystems.ITRBroker
             {
                 endpoints.MapControllerRoute(
                     name: "default",
-                    pattern: "{controller=ITRJobs}/{action=Index}/{id?}");
+                    pattern: "{controller=ITRJobMetadata}/{action=Index}/{id?}");
             });
 
             schedulerService.InitializeITRJobScheduler(context);

@@ -9,7 +9,7 @@ using Microsoft.Xrm.Sdk.Query;
 
 namespace OASystems.ITRBroker.Services
 {
-    public class ITRJobProcessService : IJob
+    public class ITRJob : IJob
     {
         public async Task Execute(IJobExecutionContext context)
         {

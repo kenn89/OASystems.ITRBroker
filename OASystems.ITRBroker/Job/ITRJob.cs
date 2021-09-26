@@ -47,17 +47,29 @@ namespace OASystems.ITRBroker.Job
                 var body = testContactName;
                 request.AddParameter("text/plain", body, ParameterType.RequestBody);
                 IRestResponse response = await client.ExecuteAsync(request);
-
-                ITRJobMetadata iTRJobMetadata = await _dbContext.ITRJobMetadata.Where(x => x.ID == new Guid(context.JobDetail.Key.Name)).FirstOrDefaultAsync();
-                iTRJobMetadata.PreviousFireTimeUtc = context.FireTimeUtc.UtcDateTime;
-                iTRJobMetadata.NextFireTimeUtc = context.NextFireTimeUtc.Value.UtcDateTime;
-                _dbContext.Update(iTRJobMetadata);
-                await _dbContext.SaveChangesAsync();
             }
             catch
             {
-                return;
+                // Log error to db
             }
+            finally
+            {
+                await LogFireTimeToDb(context);
+            }
+        }
+
+        private async Task LogFireTimeToDb(IJobExecutionContext context)
+        {
+            ITRJobMetadata iTRJobMetadata = await _dbContext.ITRJobMetadata.Where(x => x.ID == new Guid(context.JobDetail.Key.Name)).FirstOrDefaultAsync();
+            iTRJobMetadata.PreviousFireTimeUtc = context.FireTimeUtc.UtcDateTime;
+
+            if (iTRJobMetadata.IsEnabled && iTRJobMetadata.IsScheduled)
+            {
+                iTRJobMetadata.NextFireTimeUtc = context.NextFireTimeUtc.Value.UtcDateTime;
+            }
+
+            _dbContext.Update(iTRJobMetadata);
+            await _dbContext.SaveChangesAsync();
         }
     }
 }

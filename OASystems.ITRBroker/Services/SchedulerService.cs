@@ -15,11 +15,6 @@ namespace OASystems.ITRBroker.Services
     public interface ISchedulerService
     {
         Task InitializeITRJobScheduler();
-        ITRJobMetadata GetScheduledJobByJobKey(string jobKeyName);
-        Task<DateTimeOffset?> ScheduleNewJob(ITRJobMetadata iTRJobMetadata);
-        Task<DateTimeOffset?> ResecheduleJob(ITRJobMetadata iTRJobMetadata);
-        Task DeleteJob(ITRJobMetadata iTRJobMetadata);
-        List<ITRJobMetadata> GetAllScheduledJobs();
         Task SyncDbToSchedulerById(Guid iTRJobMetadata);
     }
 
@@ -30,8 +25,8 @@ namespace OASystems.ITRBroker.Services
 
         public SchedulerService(DatabaseContext context, IConfiguration configuration)
         {
-            _context = context;
             _scheduler = new StdSchedulerFactory().GetScheduler(configuration["Quartz:quartz.scheduler.instanceName"]).Result;
+            _context = context;
         }
 
         // Get list of enabled ITR Job Metadata from the database and start running them as scheduled jobs
@@ -50,68 +45,34 @@ namespace OASystems.ITRBroker.Services
             }
         }
 
-        // Use Job Key to retrieve the ITR Job Metadata from scheduler
-        public List<ITRJobMetadata> GetAllScheduledJobs()
+        public async Task SyncDbToSchedulerById(Guid iTRJobMetadataId)
         {
-            List<ITRJobMetadata> iTRJobMetadataList = new List<ITRJobMetadata>();
+            ITRJobMetadata dbJobMetadata = await _context.ITRJobMetadata.Where(x => x.ID == iTRJobMetadataId).FirstOrDefaultAsync();
+            ITrigger triggerOfJob = (await _scheduler.GetTriggersOfJob(new JobKey(iTRJobMetadataId.ToString()))).FirstOrDefault();
 
-            var jobKeys = _scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup()).Result;
-
-            foreach (var jobKey in jobKeys)
+            if (dbJobMetadata.IsEnabled && dbJobMetadata.IsScheduled && triggerOfJob == null)
             {
-                var triggers = _scheduler.GetTriggersOfJob(jobKey).Result;
-                foreach (var trigger in triggers)
-                {
-                    ITRJobMetadata iTRJobMetadata = new ITRJobMetadata();
-                    iTRJobMetadata.ID = new Guid(jobKey.Name);
-                    iTRJobMetadata.Name = jobKey.Group;
-                    iTRJobMetadata.CronSchedule = ((ICronTrigger)trigger).CronExpressionString;
-                    iTRJobMetadata.PreviousFireTimeUtc = trigger.GetPreviousFireTimeUtc().HasValue ? (DateTime?)trigger.GetPreviousFireTimeUtc().Value.UtcDateTime : null;
-                    iTRJobMetadata.NextFireTimeUtc = trigger.GetNextFireTimeUtc().HasValue ? (DateTime?)trigger.GetNextFireTimeUtc().Value.UtcDateTime : null;
-                    iTRJobMetadata.IsScheduled = true;
-
-                    iTRJobMetadataList.Add(iTRJobMetadata);
-                }
+                await ScheduleNewJob(dbJobMetadata);
             }
-            return iTRJobMetadataList;
+            else if (dbJobMetadata.IsEnabled && dbJobMetadata.IsScheduled && triggerOfJob != null && dbJobMetadata.CronSchedule != ((ICronTrigger)triggerOfJob).CronExpressionString)
+            {
+                await ResecheduleJob(dbJobMetadata);
+            }
+            else if ((!dbJobMetadata.IsEnabled || !dbJobMetadata.IsScheduled) && triggerOfJob != null)
+            {
+                await DeleteJob(dbJobMetadata);
+            }
         }
 
-        // Use Job Key to retrieve the ITR Job Metadata from scheduler
-        public ITRJobMetadata GetScheduledJobByJobKey(string jobKeyName)
-        {
-            ITRJobMetadata iTRJobMetadata = null;
-
-            var jobKeys = _scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup()).Result;
-
-            foreach(var jobKey in jobKeys)
-            {
-                if (jobKey.Name == jobKeyName)
-                {
-                    var triggers = _scheduler.GetTriggersOfJob(jobKey).Result;
-                    foreach (var trigger in triggers)
-                    {
-                        iTRJobMetadata = new ITRJobMetadata();
-                        iTRJobMetadata.ID = new Guid(jobKey.Name);
-                        iTRJobMetadata.Name = jobKey.Group;
-                        iTRJobMetadata.CronSchedule = ((ICronTrigger)trigger).CronExpressionString;
-                        iTRJobMetadata.PreviousFireTimeUtc = trigger.GetPreviousFireTimeUtc().HasValue ? (DateTime?)trigger.GetPreviousFireTimeUtc().Value.UtcDateTime : null;
-                        iTRJobMetadata.NextFireTimeUtc = trigger.GetNextFireTimeUtc().HasValue ? (DateTime?)trigger.GetNextFireTimeUtc().Value.UtcDateTime : null;
-                        iTRJobMetadata.IsScheduled = true;
-                        break;
-                    }
-                }
-            }
-            return iTRJobMetadata;
-        }
-
+        #region Private Methods
         // Schedule new ITR Job
-        public async Task<DateTimeOffset?> ScheduleNewJob(ITRJobMetadata iTRJobMetadata)
+        private async Task ScheduleNewJob(ITRJobMetadata iTRJobMetadata)
         {
-            IJobDetail job = JobBuilder.Create<ITRJob>()
+            IJobDetail jobDetail = JobBuilder.Create<ITRJob>()
                 .UsingJobData("crmUrl", iTRJobMetadata.CrmUrl)
                 .UsingJobData("crmClientID", iTRJobMetadata.CrmClientID)
                 .UsingJobData("crmSecret", iTRJobMetadata.CrmSecret)
-                .WithIdentity(iTRJobMetadata.ID.ToString(), iTRJobMetadata.Name)
+                .WithIdentity(iTRJobMetadata.ID.ToString())
                 .Build();
 
             ITrigger trigger = TriggerBuilder.Create()
@@ -119,13 +80,11 @@ namespace OASystems.ITRBroker.Services
                 .WithCronSchedule(iTRJobMetadata.CronSchedule)
                 .Build();
 
-            await _scheduler.ScheduleJob(job, trigger);
-
-            return trigger.GetNextFireTimeUtc();
+            await _scheduler.ScheduleJob(jobDetail, trigger);
         }
 
         // Reschedule existing ITR Job
-        public async Task<DateTimeOffset?> ResecheduleJob(ITRJobMetadata iTRJobMetadata)
+        private async Task ResecheduleJob(ITRJobMetadata iTRJobMetadata)
         {
             ITrigger trigger = TriggerBuilder.Create()
             .WithIdentity(iTRJobMetadata.ID.ToString())
@@ -133,38 +92,13 @@ namespace OASystems.ITRBroker.Services
             .Build();
 
             await _scheduler.RescheduleJob(new TriggerKey(iTRJobMetadata.ID.ToString()), trigger);
-
-            return trigger.GetNextFireTimeUtc();
         }
 
         // Delete an existing ITR Job
-        public async Task DeleteJob(ITRJobMetadata iTRJobMetadata)
+        private async Task DeleteJob(ITRJobMetadata iTRJobMetadata)
         {
-            await _scheduler.DeleteJob(new JobKey(iTRJobMetadata.ID.ToString(), iTRJobMetadata.Name));
+            await _scheduler.DeleteJob(new JobKey(iTRJobMetadata.ID.ToString()));
         }
-
-        public async Task SyncDbToSchedulerById(Guid iTRJobMetadata)
-        {
-            ITRJobMetadata schJobMetadata = GetScheduledJobByJobKey(iTRJobMetadata.ToString());
-            ITRJobMetadata dbJobMetadata = await _context.ITRJobMetadata.Where(x => x.ID == iTRJobMetadata).FirstOrDefaultAsync();
-
-            if (dbJobMetadata.IsEnabled && dbJobMetadata.IsScheduled && schJobMetadata == null)
-            {
-                // Schedule new job
-                dbJobMetadata.NextFireTimeUtc = (await ScheduleNewJob(dbJobMetadata)).Value.UtcDateTime;
-                await _context.SaveChangesAsync();
-            }
-            else if (dbJobMetadata.IsEnabled && dbJobMetadata.IsScheduled && schJobMetadata != null && dbJobMetadata.CronSchedule != schJobMetadata.CronSchedule)
-            {
-                // Reschedule the job
-                dbJobMetadata.NextFireTimeUtc = (await ResecheduleJob(dbJobMetadata)).Value.UtcDateTime;
-                await _context.SaveChangesAsync();
-            }
-            else if ((!dbJobMetadata.IsEnabled || !dbJobMetadata.IsScheduled) && schJobMetadata != null)
-            {
-                // Stop the job
-                await DeleteJob(dbJobMetadata);
-            }
-        }
+        #endregion
     }
 }

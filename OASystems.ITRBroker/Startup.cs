@@ -13,7 +13,6 @@ using OASystems.ITRBroker.Models;
 using OASystems.ITRBroker.Services;
 using Quartz;
 
-
 namespace OASystems.ITRBroker
 {
     public class Startup

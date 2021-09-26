@@ -4,9 +4,7 @@ using OASystems.ITRBroker.Job;
 using OASystems.ITRBroker.Models;
 using Quartz;
 using Quartz.Impl;
-using Quartz.Impl.Matchers;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 

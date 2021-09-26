@@ -84,7 +84,7 @@ namespace OASystems.ITRBroker.Controllers
                     if (Validator.TryValidateObject(iTRJobMetadata, context, results, true))
                     {
                         await _context.SaveChangesAsync();
-                        await _schedulerService.SyncDbToSchedulerById(_context, iTRJobMetadataId);
+                        await _schedulerService.SyncDbToSchedulerById(iTRJobMetadataId);
                         iTRJobMetadata = await _context.ITRJobMetadata.Where(x => x.ID == iTRJobMetadataId).FirstOrDefaultAsync();
                     }
                     else

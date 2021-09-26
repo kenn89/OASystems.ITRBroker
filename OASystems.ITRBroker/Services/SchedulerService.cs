@@ -12,30 +12,32 @@ namespace OASystems.ITRBroker.Services
 {
     public interface ISchedulerService
     {
-        Task InitializeITRJobScheduler(DatabaseContext context);
+        Task InitializeITRJobScheduler();
         ITRJobMetadata GetScheduledJobByJobKey(string jobKeyName);
         Task<DateTimeOffset?> ScheduleNewJob(ITRJobMetadata iTRJobMetadata);
         Task<DateTimeOffset?> ResecheduleJob(ITRJobMetadata iTRJobMetadata);
         Task DeleteJob(ITRJobMetadata iTRJobMetadata);
         List<ITRJobMetadata> GetAllScheduledJobs();
-        Task SyncDbToSchedulerById(DatabaseContext context, Guid iTRJobMetadata);
+        Task SyncDbToSchedulerById(Guid iTRJobMetadata);
     }
 
     public class SchedulerService : ISchedulerService
     {
+        private readonly DatabaseContext _context;
         private readonly IScheduler _scheduler;
 
-        public SchedulerService()
+        public SchedulerService(DatabaseContext context)
         {
+            _context = context;
             _scheduler = new StdSchedulerFactory().GetScheduler().Result;
         }
 
         // Get list of enabled ITR Job Metadata from the database and start running them as scheduled jobs
-        public async Task InitializeITRJobScheduler(DatabaseContext context)
+        public async Task InitializeITRJobScheduler()
         {
             await _scheduler.Start();
 
-            List<ITRJobMetadata> iTRJobMetadataList = context.ITRJobMetadata.ToList();
+            List<ITRJobMetadata> iTRJobMetadataList = _context.ITRJobMetadata.ToList();
 
             foreach (ITRJobMetadata iTRJobMetadata in iTRJobMetadataList)
             {
@@ -139,22 +141,22 @@ namespace OASystems.ITRBroker.Services
             await _scheduler.DeleteJob(new JobKey(iTRJobMetadata.ID.ToString(), iTRJobMetadata.Name));
         }
 
-        public async Task SyncDbToSchedulerById(DatabaseContext context, Guid iTRJobMetadata)
+        public async Task SyncDbToSchedulerById(Guid iTRJobMetadata)
         {
             ITRJobMetadata schJobMetadata = GetScheduledJobByJobKey(iTRJobMetadata.ToString());
-            ITRJobMetadata dbJobMetadata = await context.ITRJobMetadata.Where(x => x.ID == iTRJobMetadata).FirstOrDefaultAsync();
+            ITRJobMetadata dbJobMetadata = await _context.ITRJobMetadata.Where(x => x.ID == iTRJobMetadata).FirstOrDefaultAsync();
 
             if (dbJobMetadata.IsEnabled && dbJobMetadata.IsScheduled && schJobMetadata == null)
             {
                 // Schedule new job
                 dbJobMetadata.NextFireTimeUtc = (await ScheduleNewJob(dbJobMetadata)).Value.UtcDateTime;
-                await context.SaveChangesAsync();
+                await _context.SaveChangesAsync();
             }
             else if (dbJobMetadata.IsEnabled && dbJobMetadata.IsScheduled && schJobMetadata != null && dbJobMetadata.CronSchedule != schJobMetadata.CronSchedule)
             {
                 // Reschedule the job
                 dbJobMetadata.NextFireTimeUtc = (await ResecheduleJob(dbJobMetadata)).Value.UtcDateTime;
-                await context .SaveChangesAsync();
+                await _context.SaveChangesAsync();
             }
             else if ((!dbJobMetadata.IsEnabled || !dbJobMetadata.IsScheduled) && schJobMetadata != null)
             {

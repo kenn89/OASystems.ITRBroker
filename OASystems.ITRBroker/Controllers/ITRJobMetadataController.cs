@@ -61,7 +61,7 @@ namespace OASystems.ITRBroker.Controllers
                 iTRJobMetadata.ID = Guid.NewGuid();
                 _context.Add(iTRJobMetadata);
                 await _context.SaveChangesAsync();
-                await _schedulerService.SyncDbToSchedulerById(_context, iTRJobMetadata.ID);
+                await _schedulerService.SyncDbToSchedulerById(iTRJobMetadata.ID);
                 return RedirectToAction(nameof(Index));
             }
             return View(iTRJobMetadata);
@@ -113,7 +113,7 @@ namespace OASystems.ITRBroker.Controllers
                         throw;
                     }
                 }
-                await _schedulerService.SyncDbToSchedulerById(_context, iTRJobMetadata.ID);
+                await _schedulerService.SyncDbToSchedulerById(iTRJobMetadata.ID);
                 return RedirectToAction(nameof(Index));
             }
             return View(iTRJobMetadata);

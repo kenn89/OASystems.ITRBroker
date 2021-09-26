@@ -11,6 +11,8 @@ using Microsoft.Identity.Web.UI;
 using OASystems.ITRBroker.Handler;
 using OASystems.ITRBroker.Models;
 using OASystems.ITRBroker.Services;
+using Quartz;
+
 
 namespace OASystems.ITRBroker
 {
@@ -49,7 +51,16 @@ namespace OASystems.ITRBroker
             services.AddDbContext<DatabaseContext>(
                 options => options.UseSqlServer($"Server={server};Database={database};User Id={userId};Password={password}"));
 
-            // Configure scheduler
+            // Configure Quartz scheduler
+            services.Configure<QuartzOptions>(Configuration.GetSection("Quartz"));
+            services.AddQuartz(q =>
+            {
+                q.UseMicrosoftDependencyInjectionJobFactory();
+            });
+            services.AddQuartzServer(options =>
+            {
+                options.WaitForJobsToComplete = true;
+            });
             services.AddScoped<ISchedulerService, SchedulerService>();
         }
 

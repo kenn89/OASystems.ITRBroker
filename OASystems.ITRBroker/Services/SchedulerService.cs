@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using OASystems.ITRBroker.Job;
 using OASystems.ITRBroker.Models;
 using Quartz;
 using Quartz.Impl;
@@ -26,10 +28,10 @@ namespace OASystems.ITRBroker.Services
         private readonly DatabaseContext _context;
         private readonly IScheduler _scheduler;
 
-        public SchedulerService(DatabaseContext context)
+        public SchedulerService(DatabaseContext context, IConfiguration configuration)
         {
             _context = context;
-            _scheduler = new StdSchedulerFactory().GetScheduler().Result;
+            _scheduler = new StdSchedulerFactory().GetScheduler(configuration["Quartz:quartz.scheduler.instanceName"]).Result;
         }
 
         // Get list of enabled ITR Job Metadata from the database and start running them as scheduled jobs

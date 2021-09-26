@@ -1,16 +1,24 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Quartz;
-using RestSharp;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.PowerPlatform.Dataverse.Client;
 using Microsoft.Xrm.Sdk.Query;
+using OASystems.ITRBroker.Models;
+using Quartz;
+using RestSharp;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 
-namespace OASystems.ITRBroker.Services
+namespace OASystems.ITRBroker.Job
 {
     public class ITRJob : IJob
     {
+        private readonly DatabaseContext _dbContext;
+
+        public ITRJob(DatabaseContext dbContext)
+        {
+            _dbContext = dbContext;
+        }
+
         public async Task Execute(IJobExecutionContext context)
         {
             try
@@ -39,6 +47,12 @@ namespace OASystems.ITRBroker.Services
                 var body = testContactName;
                 request.AddParameter("text/plain", body, ParameterType.RequestBody);
                 IRestResponse response = await client.ExecuteAsync(request);
+
+                ITRJobMetadata iTRJobMetadata = await _dbContext.ITRJobMetadata.Where(x => x.ID == new Guid(context.JobDetail.Key.Name)).FirstOrDefaultAsync();
+                iTRJobMetadata.PreviousFireTimeUtc = context.FireTimeUtc.UtcDateTime;
+                iTRJobMetadata.NextFireTimeUtc = context.NextFireTimeUtc.Value.UtcDateTime;
+                _dbContext.Update(iTRJobMetadata);
+                await _dbContext.SaveChangesAsync();
             }
             catch
             {

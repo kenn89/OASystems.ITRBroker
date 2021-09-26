@@ -28,23 +28,17 @@ namespace OASystems.ITRBroker.Controllers
 
         // GET: api/ITRJobMetadata
         [HttpGet]
-        public async Task<ITRJobMetadata> Get()
+        public async Task<IActionResult> Get()
         {
-            Guid iTRJobMetadataId = new Guid(User.FindFirstValue(ClaimTypes.NameIdentifier));
-
-            // Try to get the ITR Job Metadata from the scheduler
-            ITRJobMetadata schJobMetadata = _schedulerService.GetScheduledJobByJobKey(iTRJobMetadataId.ToString());
-
-            if (schJobMetadata == null)
+            try
             {
-                // If no scheduled job found, return the ITR Job Metadata from the Database
-                ITRJobMetadata dbJobMetadata = await _context.ITRJobMetadata.Where(x => x.ID == iTRJobMetadataId).FirstOrDefaultAsync();
-                return dbJobMetadata;
+                Guid iTRJobMetadataId = new Guid(User.FindFirstValue(ClaimTypes.NameIdentifier));
+
+                return Ok(await _context.ITRJobMetadata.Where(x => x.ID == iTRJobMetadataId).FirstOrDefaultAsync());
             }
-            else
+            catch (Exception ex)
             {
-                // If scheduled job is found, return the ITR Job Metadata from the Scheduler
-                return schJobMetadata;
+                return BadRequest(ex.Message);
             }
         }
 

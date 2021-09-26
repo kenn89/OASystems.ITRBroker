@@ -54,7 +54,7 @@ namespace OASystems.ITRBroker
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, DatabaseContext context, ISchedulerService schedulerService)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ISchedulerService schedulerService)
         {
             if (env.IsDevelopment())
             {

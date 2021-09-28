@@ -14,5 +14,13 @@
     <PackageReference Include="RestSharp" Version="106.12.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="System.ServiceModel" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <WCFMetadata Include="Connected Services" />
+  </ItemGroup>
+
 
 </Project>

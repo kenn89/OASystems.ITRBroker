@@ -13,12 +13,15 @@ using System.Xml.Serialization;
 using System.IO;
 using OASystems.ITRBroker.Common;
 using Microsoft.Xrm.Sdk;
+using KissLog;
 
 namespace OASystems.ITRBroker.Job
 {
     public class PullEsisMessagesJob : IJob
     {
         private readonly IConfiguration _configuration;
+        private readonly DatabaseContext _dbContext;
+        private readonly ILogger _logger;
 
         private CrmServiceContext crmServiceContext;
         private MessageHeadersType messageHeader;
@@ -26,56 +29,56 @@ namespace OASystems.ITRBroker.Job
         public PullEsisMessagesJob(IConfiguration configuration)
         {
             _configuration = configuration;
+            _logger = new Logger(url: "/PullEsisMessagesJob");
         }
 
         public async Task Execute(IJobExecutionContext context)
         {
+            JobDataMap datamap = context.JobDetail.JobDataMap;
+            _logger.Info($"CRM Instance: {datamap.GetString("crmUrl")}\nExecuting Pull Message from Esis Job...");
+
             try
             {
                 InitializeVariables(context);
 
-                // Get list of ITR Messages with status reason "Sent to ITR"
-                List<OA_itrmessage> itrMessageList = crmServiceContext.OA_itrmessageSet.Where(x => x.StatusCode == OA_itrmessage_StatusCode.SenttoITR).ToList();
+                // Get list of ITR Messages with status reason "Sent to ITR" from CRM
+                List<OA_itrmessage> itrMessageList = GetSentToItrItrMessages();
+                _logger.Info($"Retrieved \"Sent to ITR\" ITR Messages from CRM.\n{itrMessageList.Count} record(s) retrieved.");
 
-                List<Message> fetchMessageList = new List<Message>();
-                List<Message> uploadMessageList = new List<Message>();
-                foreach (OA_itrmessage itrMessage in itrMessageList)
+                // Get two separate lists of "Fetch" and "Upload" Messages
+                GetOutgoingMessageFromNoteAttachment(itrMessageList, out List <Message> fetchMessageList, out List<Message> uploadMessageList);
+                _logger.Info($"Retrieved {fetchMessageList.Count} \"Fetch\" record(s).\nRetrieved {uploadMessageList.Count} \"Upload\" record(s).");
+
+                // Pull the Message from Esis
+                var pulledEsisUploadMessageList = await PullEsisUploadMessage(uploadMessageList);
+                var pulledEsisFetchMessageList = await PullEsisFetchMessage(fetchMessageList);
+                _logger.Info($"Pull Messages from Esis complete.");
+
+                // Update Status/ Dates / etc. in CRM
+                var mergeLists = new List<Message>();
+                foreach(var message in pulledEsisFetchMessageList)
                 {
-                    // Get the message content from the note attachment
-                    Message message = GetIncomingMessageFromNoteAttachment(itrMessage.Id);
-
-                    if (EsisHelpers.IsFetchTertiaryPerformanceDataMessage(message.Request))
-                    {
-                        fetchMessageList.Add(message);
-                    }
-                    else
-                    {
-                        uploadMessageList.Add(message);
-                    }
+                    mergeLists.Add(message);
                 }
-
-                var pulledEsisUploadMessageList = await PullEsisUploadMessage(messageHeader, uploadMessageList);
-
-                foreach (Message message in pulledEsisUploadMessageList)
+                foreach(var message in pulledEsisFetchMessageList)
                 {
-                    var itrMessage = itrMessageList.Where(x => x.Id == new Guid(message.MessageId)).FirstOrDefault();
-
-                    UpdateItrMessageRecord(message, itrMessage);
-
-                    if (message.Status == (int)Status.PulledFromEsis)
-                    {
-                        message.Status = (int)Status.ReturnedToTms;
-                    }
-                    CrmHelpers.CreateIncomingMessageToNoteAttachment(crmServiceContext, message, _configuration["IncomingFileName"]);
+                    mergeLists.Add(message);
                 }
+                UpdateItrMessageRecord(mergeLists, itrMessageList);
+                _logger.Info("Update ITR Message records to CRM complete.");
             }
             catch (Exception ex)
             {
-                // Log error
-                var log = ex.Message;
+                _logger.Critical(ex.ToString());
+            }
+            finally
+            {
+                _logger.Info("Completed Pull Message from Esis Job.");
+                Logger.NotifyListeners(_logger);
             }
         }
 
+        #region Private Methods
         private void InitializeVariables(IJobExecutionContext context)
         {
             // Retrieve CRM connection parameters
@@ -114,63 +117,147 @@ namespace OASystems.ITRBroker.Job
             }
         }
 
-        private Message GetIncomingMessageFromNoteAttachment(Guid itrMessageId)
+        private List<OA_itrmessage> GetSentToItrItrMessages()
         {
-            Annotation note = crmServiceContext.AnnotationSet.Where(x => x.ObjectId.Id == itrMessageId && x.FileName == _configuration["IncomingFileName"]).FirstOrDefault();
-
-            var messageString = Encoding.ASCII.GetString(Convert.FromBase64String(note.DocumentBody));
-
-            var serializer = new XmlSerializer(typeof(Message));
-            Message message;
-            using (var sr = new StringReader(messageString))
-            {
-                message = (Message)serializer.Deserialize(sr);
-            }
-
-            if (message.MessageLabel == null)
-            {
-                message.MessageLabel = string.Empty;
-            }
-
-            return message;
+            return crmServiceContext.OA_itrmessageSet.Where(x => x.StatusCode == OA_itrmessage_StatusCode.SenttoITR).ToList();
         }
 
-        private void UpdateItrMessageRecord(Message message, OA_itrmessage itrMessage)
+        private void GetOutgoingMessageFromNoteAttachment(List<OA_itrmessage> itrMessageList, out List<Message> fetchMessageList, out List<Message> uploadMessageList)
         {
-            string errorMessage = string.Empty;
-            bool errorsAddressed = false;
-            OA_itrmessage_StatusCode? statusCode = null;
+            fetchMessageList = new List<Message>();
+            uploadMessageList = new List<Message>();
 
-            if (message.Status == (int)Status.PulledFromEsis)
+            foreach (OA_itrmessage itrMessage in itrMessageList)
             {
-                statusCode = OA_itrmessage_StatusCode.Accepted;
-                errorsAddressed = true;
-            }
-            else if (message.Status == (int)Status.Failed || message.Status == (int)Status.Unkown)
-            {
-                statusCode = OA_itrmessage_StatusCode.Error;
-                errorMessage = message.Errors;
-                errorsAddressed = false;
-            }
+                // Get the message content from the note attachment
+                Message message = CrmHelpers.GetMessageFromNoteAttachment(crmServiceContext, itrMessage.Id, _configuration["IncomingFileName"]);
 
-            if (statusCode != null)
-            {
-                OA_itrmessage itrMessageUpdate = new OA_itrmessage()
+                if (EsisHelpers.IsFetchTertiaryPerformanceDataMessage(message.Request))
                 {
-                    Id = new Guid(message.MessageId),
-                    OA_ResponseReceived = message.PullCompletedOn,
-                    StatusCode = statusCode,
-                    OA_Errors = errorMessage,
-                    OA_Allerrorsaddressed = errorsAddressed
-                };
-
-                crmServiceContext.Detach(itrMessage);
-                crmServiceContext.Attach(itrMessageUpdate);
-                crmServiceContext.UpdateObject(itrMessageUpdate);
+                    fetchMessageList.Add(message);
+                }
+                else
+                {
+                    uploadMessageList.Add(message);
+                }
             }
         }
 
-        public async static Task<List<Message>> PullEsisUploadMessage(MessageHeadersType messageHeader, List<Message> messageList)
+        private void UpdateItrMessageRecord(List<Message> messageList, List<OA_itrmessage> itrMessageList)
+        {
+            foreach (Message message in messageList)
+            {
+                var itrMessage = itrMessageList.Where(x => x.Id == new Guid(message.MessageId)).FirstOrDefault();
+
+                string errorMessage = string.Empty;
+                bool errorsAddressed = false;
+                OA_itrmessage_StatusCode? statusCode = null;
+
+                if (message.Status == (int)Status.PulledFromEsis)
+                {
+                    statusCode = OA_itrmessage_StatusCode.Accepted;
+                    errorsAddressed = true;
+
+                    message.Status = (int)Status.ReturnedToTms;
+                }
+                else if (message.Status == (int)Status.Failed || message.Status == (int)Status.Unkown)
+                {
+                    statusCode = OA_itrmessage_StatusCode.Error;
+                    errorMessage = message.Errors;
+                    errorsAddressed = false;
+                }
+
+                if (statusCode != null)
+                {
+                    OA_itrmessage itrMessageUpdate = new OA_itrmessage()
+                    {
+                        Id = new Guid(message.MessageId),
+                        OA_ResponseReceived = message.PullCompletedOn,
+                        StatusCode = statusCode,
+                        OA_Errors = errorMessage,
+                        OA_Allerrorsaddressed = errorsAddressed
+                    };
+
+                    crmServiceContext.Detach(itrMessage);
+                    crmServiceContext.Attach(itrMessageUpdate);
+                    crmServiceContext.UpdateObject(itrMessageUpdate);
+
+                    CrmHelpers.CreateIncomingMessageToNoteAttachment(crmServiceContext, message, _configuration["IncomingFileName"]);
+                }
+            }
+        }
+
+        private async Task<List<Message>> PullEsisFetchMessage(List<Message> messageLists)
+        {
+            ESIS_TecItrLearnerEventServices_v1Client esisServiceClient = new ESIS_TecItrLearnerEventServices_v1Client();
+
+            // List to be returned
+            List<Message> messageListReturn = new List<Message>();
+
+            foreach (var message in messageLists)
+            {
+                try
+                {
+                    FetchLearnerEventDataResultsRequest request = new FetchLearnerEventDataResultsRequest()
+                    {
+                        MessageHeaders = messageHeader,
+                        MessageId = message.PushResponse
+                    };
+
+                    message.PullStartedOn = DateTime.Now;
+                    FetchLearnerEventDataResultsResponse response = await esisServiceClient.FetchLearnerEventDataResultsAsync(request);
+                    message.PullCompletedOn = DateTime.Now;
+
+                    _logger.Info(Utility.GeneratePullEsisInfoText(message.MessageId, message.PushResponse, $"Pulled \"Fetch\" Message Type from Esis Response:\n{response.ToString()}"));
+
+                    FetchLearnerEventDataResultType result = response.FetchLearnerEventDataResult;
+                    if (result.StatusCode == MessageStatusCodeType.RETRIEVED)
+                    {
+                        if (result.LearnerEventDataResult != null)
+                        {
+                            message.Status = (int)Status.PulledFromEsis;
+                            message.PullResponse = result.LearnerEventDataResult.ToString();
+
+                            messageListReturn.Add(message);
+                            _logger.Info(Utility.GeneratePullEsisInfoText(message.MessageId, message.PushResponse, $"Successfully processed Message with Status Code \"{result.StatusCode}\"."));
+                        }
+                        else
+                        {
+                            message.Status = (int)Status.Failed;
+
+                            messageListReturn.Add(message);
+                            _logger.Info(Utility.GeneratePullEsisInfoText(message.MessageId, message.PushResponse, $"Successfully processed Message with Status Code \"{result.StatusCode}\". However \"LearnerEventDataResult\" is null, hence status is saved as Failed."));
+                        }
+                    }
+                    else if (result.StatusCode == MessageStatusCodeType.MESSAGE_ERROR)
+                    {
+                        message.Status = (int)Status.Failed;
+
+                        messageListReturn.Add(message);
+                        _logger.Info(Utility.GeneratePullEsisInfoText(message.MessageId, message.PushResponse, $"Successfully processed Message with Status Code \"{result.StatusCode}\"."));
+                    }
+                    else if (result.StatusCode == MessageStatusCodeType.UNKOWN)
+                    {
+                        message.Status = (int)Status.Unkown;
+
+                        messageListReturn.Add(message);
+                        _logger.Info(Utility.GeneratePullEsisInfoText(message.MessageId, message.PushResponse, $"Successfully processed Message with Status Code \"{result.StatusCode}\"."));
+                    }
+                    else
+                    {
+                        _logger.Info(Utility.GeneratePullEsisInfoText(message.MessageId, message.PushResponse, $"Status Code \"{result.StatusCode}\" did not satisfy the condition to process the Message further."));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.Error($"ITR Message ID: {message.MessageId}\nEsis Message ID: {message.PushResponse}\nStep: PullEsisFetchMessage\n\nError Details:\n{ex.ToString()}");
+                }
+            }
+
+            return messageListReturn;
+        }
+
+        private async Task<List<Message>> PullEsisUploadMessage(List<Message> messageList)
         {
             ESIS_TecItrLearnerEventServices_v1Client esisServiceClient = new ESIS_TecItrLearnerEventServices_v1Client();
 
@@ -180,62 +267,79 @@ namespace OASystems.ITRBroker.Job
             GetLearnerEventResultsResponse response = await esisServiceClient.GetLearnerEventResultsAsync(request);
             DateTime pullCompletedOn = DateTime.Now;
 
+            _logger.Info($"Pulled \"Upload\" Message Type from Esis Response:\n{response.ToString()}");
+
             // List to be returned
             List<Message> messageListReturn = new List<Message>();
 
-            // Dictionary to be returned
-            Dictionary<string, string> transactionResultsOutput = new Dictionary<string, string>();
-
             if (response.LearnerEventResultList != null)
             {
-                foreach (var result in response.LearnerEventResultList)
+                foreach (LearnerEventResultType result in response.LearnerEventResultList)
                 {
                     Message message = messageList.Where(x => x.PushResponse == result.MessageId).FirstOrDefault();
-
-                    message.PullStartedOn = pullStartedOn;
-                    message.PullCompletedOn = pullCompletedOn;
-
-                    if (result.StatusCode == MessageStatusCodeType.RETRIEVED)
+                    try
                     {
-                        if (result.ITRResult == null)
+                        _logger.Info(Utility.GeneratePullEsisInfoText(message.MessageId, message.PushResponse, $"Pulled Upload from Esis Result:\n{result.ToString()}."));
+
+                        message.PullStartedOn = pullStartedOn;
+                        message.PullCompletedOn = pullCompletedOn;
+
+                        if (result.StatusCode == MessageStatusCodeType.RETRIEVED)
+                        {
+                            if (result.ITRResult == null)
+                            {
+                                message.Status = (int)Status.Failed;
+
+                                messageListReturn.Add(message);
+                                _logger.Info(Utility.GeneratePullEsisInfoText(message.MessageId, message.PushResponse, $"Successfully processed Message with Status Code \"{result.StatusCode}\". However \"LearnerEventDataResult\" is null, hence status is saved as Failed."));
+                            }
+                            else if (result.ITRResult.LocalName.ToLower() == SystemMessages.Success.ToLower())
+                            {
+                                EsisHelpers.ProcessITRSuccessResponse(result, out _, out _, out string transactionResult);
+                                message.Status = (int)Status.PulledFromEsis;
+                                message.PullResponse = result.ITRResult.ToString();
+
+                                messageListReturn.Add(message);
+                                _logger.Info(Utility.GeneratePullEsisInfoText(message.MessageId, message.PushResponse, $"Successfully processed Message with Status Code \"{result.StatusCode}\"."));
+                            }
+                            else
+                            {
+                                EsisHelpers.ProcessITRFailureResponse(result, out string transactionResult);
+                                message.Status = (int)Status.Failed;
+                                message.PullResponse = result.ITRResult.ToString();
+                                message.Errors = transactionResult;
+
+                                messageListReturn.Add(message);
+                                _logger.Info(Utility.GeneratePullEsisInfoText(message.MessageId, message.PushResponse, $"Successfully processed Message with Status Code \"{result.StatusCode}\". However \"ITR Result\" stated that the upload has Failed, hence status is savead as Failed."));
+                            }
+                        }
+                        else if (result.StatusCode == MessageStatusCodeType.MESSAGE_ERROR)
                         {
                             message.Status = (int)Status.Failed;
 
                             messageListReturn.Add(message);
+                            _logger.Info(Utility.GeneratePullEsisInfoText(message.MessageId, message.PushResponse, $"Successfully processed Message with Status Code \"{result.StatusCode}\"."));
                         }
-                        else if (result.ITRResult.LocalName.ToLower() == SystemMessages.Success.ToLower())
+                        else if (result.StatusCode == MessageStatusCodeType.UNKOWN)
                         {
-                            EsisHelpers.ProcessITRSuccessResponse(result, out _, out _, out string transactionResult);
-                            message.Status = (int)Status.PulledFromEsis;
-                            message.PullResponse = result.ITRResult.ToString();
+                            message.Status = (int)Status.Unkown;
 
                             messageListReturn.Add(message);
+                            _logger.Info(Utility.GeneratePullEsisInfoText(message.MessageId, message.PushResponse, $"Successfully processed Message with Status Code \"{result.StatusCode}\"."));
                         }
                         else
                         {
-                            EsisHelpers.ProcessITRFailureResponse(result, out string transactionResult);
-                            message.Status = (int)Status.Failed;
-                            message.PullResponse = result.ITRResult.ToString();
-                            message.Errors = transactionResult;
-
-                            messageListReturn.Add(message);
+                            _logger.Info(Utility.GeneratePullEsisInfoText(message.MessageId, message.PushResponse, $"Status Code \"{result.StatusCode}\" did not satisfy the condition to process the Message further."));
                         }
                     }
-                    else if (result.StatusCode == MessageStatusCodeType.MESSAGE_ERROR)
+                    catch (Exception ex)
                     {
-                        message.Status = (int)Status.Failed;
-
-                        messageListReturn.Add(message);
-                    }
-                    else if (result.StatusCode == MessageStatusCodeType.UNKOWN)
-                    {
-                        message.Status = (int)Status.Unkown;
-
-                        messageListReturn.Add(message);
+                        _logger.Error($"ITR Message ID: {message.MessageId}\nEsis Message ID: {result.MessageId}\nStep: PullEsisUploadMessage\n\nResult:\n{result.ToString()}\n\nError Details:\n{ex.ToString()}");
                     }
                 }
             }
             return messageListReturn;
         }
+        #endregion
     }
 }

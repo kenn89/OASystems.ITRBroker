@@ -1,16 +1,37 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using CrmEarlyBound;
+﻿using CrmEarlyBound;
 using Microsoft.Xrm.Sdk;
-using System.Text;
 using OASystems.ITRBroker.Models;
+using System;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Xml.Serialization;
 
 namespace OASystems.ITRBroker.Common
 {
     public static class CrmHelpers
     {
+        public static Message GetMessageFromNoteAttachment(CrmServiceContext crmServiceContext, Guid itrMessageId, string fileName)
+        {
+            Annotation note = crmServiceContext.AnnotationSet.Where(x => x.ObjectId.Id == itrMessageId && x.FileName == fileName).FirstOrDefault();
+
+            var messageString = Encoding.ASCII.GetString(Convert.FromBase64String(note.DocumentBody));
+
+            var serializer = new XmlSerializer(typeof(Message));
+            Message message;
+            using (var sr = new StringReader(messageString))
+            {
+                message = (Message)serializer.Deserialize(sr);
+            }
+
+            if (message.MessageLabel == null)
+            {
+                message.MessageLabel = string.Empty;
+            }
+
+            return message;
+        }
+
         public static void CreateIncomingMessageToNoteAttachment(CrmServiceContext crmServiceContext, Message message, string fileName)
         {
             Annotation note = new Annotation()

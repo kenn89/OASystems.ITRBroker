@@ -20,7 +20,10 @@ namespace OASystems.ITRBroker.Common
                 var doc = new XmlDocument();
 
                 doc.LoadXml(request);
-                if (doc.DocumentElement != null && doc.DocumentElement.Name.Equals("FetchEnrolmentDetails", StringComparison.CurrentCultureIgnoreCase))
+                if (doc.DocumentElement != null &&
+                    (doc.DocumentElement.Name.Equals("FetchEnrolmentDetails", StringComparison.CurrentCultureIgnoreCase) ||
+                        doc.DocumentElement.Name.Equals("FetchTrainingAgreementDetails", StringComparison.CurrentCultureIgnoreCase))
+                    )
                 {
                     return true;
                 }

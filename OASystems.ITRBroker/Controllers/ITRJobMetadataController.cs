@@ -99,11 +99,14 @@ namespace OASystems.ITRBroker.Controllers
             {
                 try
                 {
-                    var itrJobMetadataLocal = await _context.ITRJobMetadata.Where(x => x.ID == id).FirstOrDefaultAsync();
-                    iTRJobMetadata.PreviousFireTimeUtc = itrJobMetadataLocal.PreviousFireTimeUtc;
-                    iTRJobMetadata.NextFireTimeUtc = itrJobMetadataLocal.NextFireTimeUtc;
-                    _context.Entry(itrJobMetadataLocal).State = EntityState.Detached;
+                    // Prevent these fields from being overwritten
+                    var iTRJobMetadataLocal = await _context.ITRJobMetadata.Where(x => x.ID == id).FirstOrDefaultAsync();
+                    iTRJobMetadata.ApiUsername = iTRJobMetadataLocal.ApiUsername;
+                    iTRJobMetadata.ApiPassword = iTRJobMetadataLocal.ApiPassword;
+                    iTRJobMetadata.PreviousFireTimeUtc = iTRJobMetadataLocal.PreviousFireTimeUtc;
+                    iTRJobMetadata.NextFireTimeUtc = iTRJobMetadataLocal.NextFireTimeUtc;
 
+                    _context.Entry(iTRJobMetadataLocal).State = EntityState.Detached;
                     _context.Entry(iTRJobMetadata).State = EntityState.Modified;
                     _context.Update(iTRJobMetadata);
                     await _context.SaveChangesAsync();

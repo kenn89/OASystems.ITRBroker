@@ -17,11 +17,9 @@ namespace OASystems.ITRBroker.Models
         public string Name { get; set; }
         [DisplayName("API Username")]
         [JsonIgnore]
-        [Required]
         public string ApiUsername { get; set; }
         [DisplayName("API Password")]
         [JsonIgnore]
-        [Required]
         public string ApiPassword { get; set; }
         [DisplayName("CRM URL")]
         [JsonIgnore]

@@ -1,0 +1,1197 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- edited with XMLSpy v2005 rel. 3 U (http://www.altova.com) by Information Technology (Tertiary Education Commission) -->
+<xs:schema xmlns="urn:nzl:govt:educating:specification:tertiary:schema:xsd:PerformanceDataCaptureMessages-TEC3" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:bc="urn:nzl:govt:educating:specification:tertiary:schema:xsd:TertiaryBasicComponents-TEC2" xmlns:tc="urn:nzl:govt:educating:specification:tertiary:schema:xsd:CommonTertiaryComponents-TEC2" targetNamespace="urn:nzl:govt:educating:specification:tertiary:schema:xsd:PerformanceDataCaptureMessages-TEC3" elementFormDefault="qualified" attributeFormDefault="unqualified" version="4.0">
+	<xs:import namespace="urn:nzl:govt:educating:specification:tertiary:schema:xsd:TertiaryBasicComponents-TEC2" schemaLocation="TertiaryEducationBaseDataTypes.xsd"/>
+	<xs:import namespace="urn:nzl:govt:educating:specification:tertiary:schema:xsd:CommonTertiaryComponents-TEC2" schemaLocation="CommonTertiaryComponents.xsd"/>
+	<xs:annotation>
+		<xs:documentation>
+      SCHEMA NAME: 	ITR Performance Data Messages
+      VERSION:	    0.1: Date unknown - Learner Details, Training Agreement
+      0.2:	15/4/2010, Paul Fernyhough, Added Modern Apprenticeship Enrolments
+      0.3:	20/4/2010, Paul Fernyhough, Added ProgrammeCourseComplexType
+      0.4: 21/4/2010, Paul Fernyhough, Renamed ProgrammCourseType to CreateProgrammeCourseType
+      Removed ProgrammeIdentifier from CreateProgrammeCourseType and renamed NationalQualificationWithSubComponents
+      0.5: 26/4/2010, Paul Fernyhough, Renamed ProgrammeStandard within ProgrammeEnrolment to Standard
+      Created ProgrammeStandardType and used across all of ProgrammeEnrolment
+      0.6: 30/4/2010, Paul Fernyhough, HistoricalProgrammCourseNumber now optional and unbounded
+      Added TermsAndConditionsIndicator to CreateProgrammeCourseType
+      0.7:21/5/2010, Amy Palamountain, SupplementaryCredit Programme/TargetQualificationIdentifier now optional
+      Fixed spelling mistake on TargetQualificationIdentifier and referencing elements
+      0.8: 24/5/2010, Paul Fernyhough, SimpleEnrolment now unbounded.
+      0.9  2/6/2010, Paul Fernyhough, ModernApprenticeshipWithSubComponents renamed to ComplexModernApprenticeshipProgramme
+      AdditionalStandard element added to ComplexModernApprenticeshipProgramme
+      0.10  3/6/2010, Karen Young, AdditionalStandard element added to ComplexModernApprenticeshipEnrolment
+      SubProgrammeEnrolment element on ComplexModernApprenticeshipEnrolment can now have a min of one occurrence
+      0.11 4/6/2010, Richard Fortune, Removed the Standards from the NQ programmeType
+      0.12 8/6/2010, Phillip Wong, Added in TertiaryPerformanceResultType, which encapsulates error information for sending to the ITO.
+      0.13 10/6/2010, Karen Young, Added EndEnrolment element to SubmitTertiaryPerformanceDataRequest, and supporting types (EndEnrolmentType, EndProgrammeEnrolmentType and CompleteEnrolmentType).
+      0.14 14/6/2010, Karen Young, Modified to CompleteEnrolmentType to allow multiple occurrences.
+      0.15 18/6/2010, Phillip Wong, Renamed EnrolmentTypeCode on SimpleEnrolment to FundingSourceCode. Extracted FundingSourceCode enumeration to its own FundingSourceCodeType.
+      Added TermsAndConditionsIndicator to the TrainingAgreement.
+      0.16 19/8/2010, Karen Young, Richard Fortune, Changed elements to types within CreateProgrammeType so that schema contract names are more readable.  Added StartDate inside CreateProgrammeCourseType.  Added new CreditValueType and DurationType so that we can set a min value.  Moved enum restriction on NQFLevel values in to the the definition of NQFLevelType in CommonTertiaryComponents.xsd.
+      0.17 01/09/2010, Karen Young, Added CreateProgrammeCourseVersionType. Modified SubmitTertiaryPerformanceDataRequest to add CreateProgrammeCourseVersion element.  Removed PrerequisiteQualificationIdentifier element for SCP as it is no longer required.
+      0.18 22/09/2010, Karen Young, Added VersionNumberType and UpdateProgrammeCourseVersionType.  Modified SubmitTertiaryPerformanceDataRequest to add UpdateProgrammeCourseVersion element.
+      0.19 15/10/2010, Luke Ryan, Alphabetically ordered types within groups.
+      0.20 19/10/2010, Joel Guevara, Replaced the EndEnrolmentType and CompleteEnrolmentType with WithdrawEnrolmentType
+      0.21 27/10/2010, Karen Young, Added WithdrawalReasonType with enum restriction, and modified WithdrawalReasonCode to use this type
+      1.0 28/10/2010, Luke Ryan, updated xs:schema namespace and version to 1.0 for the first production release.
+      1.1 2/11/2010, Joel Guevara, Added WithdrawTrainingAgreementType. Modified SubmitTertiaryPerformanceDataRequest to add the WithdrawTrainingAgreement element.
+      1.2 8/11/2010, Luke Ryan, Added UpdateTrainingAgreementType complex type. Modified SubmitTertiaryPerformanceDataRequest to add UpdateTrainingAgreement element. Created EnrolmentType and moved ProgrammeEnrolment element from TrainingAgreementType to CreateTrainingAgreementType so TrainingAgreementType can be used for Create and Update.
+      1.3 15/11/2010, Karen Young, Added CreateTrainingPlanType and UpdateTrainingPlanType.  Modified SubmitTertiaryPerformanceDataRequest to add elements using these new types.
+      1.4 15/11/2010, Amy Palamountain, Added the UpdateSimpleEnrolmentType. Modified SubmitTertiaryPerformanceDataRequest to add element using this new type.
+      1.5 16/11/2010, Karen Young, Removed TermsAndConditionsIndicator from TrainingAgreementType.
+      1.6 17/11/2010, Phillip Wong, Added the TransferMACType. Modified SubmitTertiaryPerformanceDataRequest to add element using this new type.
+      1.7 18/11/2010, Joel Guevara, Added UpdateComplexModernApprenticeshipEnrolmentType. Modified SubmitTertiaryPerformanceDataRequest to add an element using this new type.
+      1.8 18/11/2010, Amy Palamountain Added AddSimpleEnrolmentType. Modified SubmitTertiaryPerformanceDataRequest to add a new element of this type
+      1.9 21/11/2010, Amy Palamountain Added RecordMACVisitType and UpdateLearnerDetailsType. Modified SubmitTertiaryPerformanceDataRequest to add both these new elements.
+      2.0 24/11/2010, Luke Ryan, updated xs:schema namespace and version to 2.0 for the second production release. Added seperate element definitions for each element in SubmitTertiaryPerformanceDataType choice to make generating .NET clients easier.
+      2.1 25/11/2010, Phillip Wong, Added the DeleteMACVisitType. Modified SubmitTertiaryPerformanceDataRequest to add element using this new type.
+      2.2 29/11/2010, Amy Palamountain, Added the TransferEmployerType. Modified SubmitTertiaryPerformanceDataRequest to add an element of this type.
+      2.3 02/12/2010, Phillip Wong, Added RestartTrainingAgreement, PauseTrainingAgreement (abstract), PlaceTrainingAgreementInGrace and PlaceTrainingAgreementOnHold. Also added
+      the OnHoldReasonCodeType and GraceReasonCodeType to hold the enumerations.
+      2.4 02/12/2010, Phillip Wong, Added SuccessType and FailureType into the Performance Data Capture Messages.
+      3.0 03/12/2010, Phillip Wong, updated xs:schema namespace and version to 3.0 for the third production release.
+      3.1 06/12/2010, Phillip Wong, fixed OnHoldReasonCodeType conflicting enumeration values. Now using 'OV' to indicate Overseas Travel.
+      3.2 09/01/2011, Luke Ryan, added maxOccurs to various collections to limit maximum message sizes.
+      3.3 19/01/2011, Phillip Wong, changed all usages of xs:date to bc:DateType in the TertiaryBasicComponents XSD.
+      3.4 14/02/2011, Luke Ryan, adding new types and elements for the FetchTertiaryPerformanceData transaction.
+      3.5 18/02/2011, Luke Ryan, removed redundant unused ProgrammeEnrolmentIndustryTraineeType and ProgrammeEnrolmentModernApprenticeType complex types. These types were not used by any of the operations.
+      3.6 17/03/2011, Luke Ryan, added Trade Academy funding source to FundingSourceTypeCode enumeration.
+      3.7 17/06/2011, Joel Guevara, Added the following concrete types for the FetchTertiaryPerformanceData transactions: FetchEnrolmentDetailsType and FetchTrainingAgreementDetailsType. Marked the existing LearnerEventIdentifierType type for deprecation using the document attribute.
+      3.8 23/04/2012, Phillip Wong, Changed the Unit Standard collection in FullSimpleEnrolmentType and IndustryTrainingEnrolmentType to allow minOccurs = 0. This makes the unit standards optional.
+      3.9 7/05/2012, Oliver Cardwell, Changed the the StandardIdentifierType of the ProgrammeStandardType to StandardIdentifierOptionalVersionType.
+      3.10 21/05/2012, Oliver Cardwell, Added two new message types TransferSimpleProgrammeCourseVersionType and TransferComplexProgrammeCourseVersionType.
+      3.11 18/06/2012, Phillip Wong, Added LastTransferDate as an optional field to the FullEnrolment types. These are used to send information back to users when they issue a Fetch request.
+      4.0 27/08/2013, Tony Levaggi, Added DiscontinuingProgrammeEnrolmentLocalIdentifier as an optional field to CreateProgrammeCourseType. ITR3 change for Transfer ITO / Link trainee enrolment
+      4.0 27/08/2013, Tony Levaggi, Added NZA to enumeration for FundingSourceCodeType. ITR3 change for New Zealand Apprenticeship
+      4.0 27/08/2013, Tony Levaggi, Added DeleteProgrammeEnrolment  to UpdateSimpleEnrolmentType. ITR3 change for Delete Programme Enrolment
+      4.0 27/08/2013, Tony Levaggi, Added NA and DF to enumeration WithdrawalReasonCode . ITR3 change for Transfer Enrolment and Directly Funded industry training.
+      4.0 28/08/2013, Tony Levaggi, Added FundingSourceCode  to ComplexModernApprenticeshipEnrolmentType and UpdateProgrammeCourseVersionType. ITR3 change for for New Zealand Apprenticeship
+    </xs:documentation>
+	</xs:annotation>
+	<!--********* SIMPLE TYPES **********-->
+	<xs:simpleType name="AchievementStatusType">
+		<xs:annotation>
+			<xs:documentation>
+        Identifies the status of the achievement.
+        CMP	Complete
+        TBC  To be completed
+      </xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="bc:CodeType">
+			<xs:enumeration value="CMP"/>
+			<xs:enumeration value="TBC"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="CreditValueType">
+		<xs:annotation>
+			<xs:documentation>
+        Defines a CreditValueType with a minimum value
+      </xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:int">
+			<xs:minInclusive value="1"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="DurationType">
+		<xs:annotation>
+			<xs:documentation>
+        Defines a DurationType with a minimum value
+      </xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:int">
+			<xs:minInclusive value="1"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="EnrolmentStatusType">
+		<xs:annotation>
+			<xs:documentation>
+        Identifies the status of an enrolment.
+        ACTIVE    The enrolment is in progress.
+        PENDING   The enrolment is pending. This could be because a complex modern apprenticeship enrolment doesn't yet have a modern apprenticeship training plan.
+        COMPLETED The enrolment has been completed, all components within the enrolment have been achieved.
+        HOLD      The enrolment has been placed on hold.
+        GRACE     The enrolment has been placed in a state of grace. TEC funding rules allow a trainee who has lost their job to continue funded training for a grace period.
+        WITHDRAWN The enrolment has been withdrawn.
+      </xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="bc:CodeType">
+			<xs:enumeration value="ACTIVE"/>
+			<xs:enumeration value="PENDING"/>
+			<xs:enumeration value="COMPLETED"/>
+			<xs:enumeration value="HOLD"/>
+			<xs:enumeration value="GRACE"/>
+			<xs:enumeration value="WITHDRAWN"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="FundingSourceCodeType">
+		<xs:annotation>
+			<xs:documentation>
+        Identifies the fund(s) from which enrolments may be funded.
+        IT = Industry Training
+        MA = Modern Apprenticeship
+        TA = Trade Academy
+        NZA = New Zealand Apprenticeship
+      </xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="bc:CodeType">
+			<xs:enumeration value="IT"/>
+			<xs:enumeration value="MA"/>
+			<xs:enumeration value="TA"/>
+      <xs:enumeration value="NZA"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="GraceReasonCodeType">
+		<xs:annotation>
+			<xs:documentation>
+        Identifies why the training agreement was put into a grace period
+        LE  Loss of employment
+        DM  Dismissal
+        RD  Redundancy
+      </xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="bc:CodeType">
+			<xs:enumeration value="LE"/>
+			<xs:enumeration value="DM"/>
+			<xs:enumeration value="RD"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="OnHoldReasonCodeType">
+		<xs:annotation>
+			<xs:documentation>
+        Identifies why the training agreement was placed on hold
+        SW	Seasonal work
+        PL	Parental leave
+        OV	Overseas travel
+        MD  Medical/ACC
+        CI	Attending correctional institution
+        OT  Other
+        ST	Stop training (still with employer)
+        WE  Work Experience
+      </xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="bc:CodeType">
+			<xs:enumeration value="SW"/>
+			<xs:enumeration value="PL"/>
+			<xs:enumeration value="OV"/>
+			<xs:enumeration value="MD"/>
+			<xs:enumeration value="CI"/>
+			<xs:enumeration value="OT"/>
+			<xs:enumeration value="ST"/>
+			<xs:enumeration value="WE"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="PriorActivityCodeType">
+		<xs:annotation>
+			<xs:documentation>
+        Identifies what the learner was doing before entering training.
+        01	Secondary School Student
+        02	Non-employed or Beneficiary
+        03	Wage or Salary Worker
+        04	Self-Employed
+        05	University Student
+        06	Polytechnic Student
+        07	College of Education Student
+        08	House-person or Retired
+        09	Overseas
+        11	Private Training Student
+        12	Wananga Student
+      </xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="bc:CodeType">
+			<xs:enumeration value="01"/>
+			<xs:enumeration value="02"/>
+			<xs:enumeration value="03"/>
+			<xs:enumeration value="04"/>
+			<xs:enumeration value="05"/>
+			<xs:enumeration value="06"/>
+			<xs:enumeration value="07"/>
+			<xs:enumeration value="08"/>
+			<xs:enumeration value="09"/>
+			<xs:enumeration value="11"/>
+			<xs:enumeration value="12"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="TrainingAgreementStatusType">
+		<xs:annotation>
+			<xs:documentation>
+        Identifies the status of the training agreement.
+        ACTIVE	  Active Training Agreement
+        FINISHED	Training Agreement Finished, all enrolments Completed or Withdrawn
+        GRACE	    Training Agreement in Grace period
+        HOLD	    Training Agreement on Hold
+        PENDING	  Pending Training Agreement
+      </xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="bc:CodeType">
+			<xs:enumeration value="ACTIVE"/>
+			<xs:enumeration value="FINISHED"/>
+			<xs:enumeration value="GRACE"/>
+			<xs:enumeration value="HOLD"/>
+			<xs:enumeration value="PENDING"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="VersionNumberType">
+		<xs:annotation>
+			<xs:documentation>
+        Defines a VersionNumberType with a minimum value
+      </xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:int">
+			<xs:minInclusive value="1"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="WithdrawalReasonType">
+		<xs:annotation>
+			<xs:documentation>
+        Identifies the reason why a trainee withdrew:
+        AP  Changing from Industry Trainee to Apprentice
+        BC  Business closed
+        BD  Business downturn
+        CC  Change in career choice
+        CP  Change of programme
+        DC  Deceased
+        DS  Dissatisfied with employer/industry
+        EW  Exiting the workforce
+        LA  Length of apprenticeship
+        LE  Loss of employment
+        LS  Lack of employer support
+        NF  Non-payment of fee
+        OD  Over programme duration
+        OT  Other
+        PC  Parental commitment
+        ST  Stop training (still with employer)
+        TI  Transfer ITOs
+        NA  Transfer from MA to NZA funded programmes
+        DF  Transfer to directly funded industry training
+      </xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="bc:CodeType">
+			<xs:enumeration value="AP"/>
+			<xs:enumeration value="BC"/>
+			<xs:enumeration value="BD"/>
+			<xs:enumeration value="CC"/>
+			<xs:enumeration value="CP"/>
+			<xs:enumeration value="DC"/>
+			<xs:enumeration value="DS"/>
+			<xs:enumeration value="EW"/>
+			<xs:enumeration value="LA"/>
+			<xs:enumeration value="LE"/>
+			<xs:enumeration value="LS"/>
+			<xs:enumeration value="NF"/>
+			<xs:enumeration value="OD"/>
+			<xs:enumeration value="OT"/>
+			<xs:enumeration value="PC"/>
+			<xs:enumeration value="ST"/>
+			<xs:enumeration value="TI"/>
+      <xs:enumeration value="NA"/>
+      <xs:enumeration value="DF"/>
+		</xs:restriction>
+	</xs:simpleType>
+  <xs:simpleType name="EnrolmentDeletionReasonCodeType">
+		<xs:annotation>
+			<xs:documentation>
+        Identifies why an enrolment was deleted
+        OT  Other
+        ID  Programme enrolment contained an incorrect participation start date
+        IE  Programme enrolment was invalid
+        IS  Programme enrolment has incorrect status in ITR
+      </xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="bc:CodeType">
+			<xs:enumeration value="IC"/>
+			<xs:enumeration value="ID"/>
+			<xs:enumeration value="EI"/>
+      <xs:enumeration value="IS"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<!--************* COMPLEX TYPES ************** -->
+	<xs:complexType name="AddSimpleEnrolmentType">
+		<xs:sequence>
+			<xs:element name="LearnerDetails" type="tc:LearnerDetailsType"/>
+			<xs:element name="TrainingAgreementLocalIdentifier" type="bc:IdentifierType"/>
+			<xs:element name="SimpleEnrolment" type="SimpleEnrolmentType">
+				<xs:annotation>
+					<xs:documentation>A simple enrolment with no sub enrolments.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="ComplexModernApprenticeshipProgrammeType">
+		<xs:sequence>
+			<xs:element name="SubProgrammeCourseIdentifier" type="tc:ProgrammeCourseIdentifierType" maxOccurs="20"/>
+			<xs:element name="AdditionalStandard" type="ProgrammeStandardType" minOccurs="0" maxOccurs="100">
+				<xs:annotation>
+					<xs:documentation>Standards required to complete an MA programme in addition to those required to complete the related qualification(s).</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="ComplexModernApprenticeshipEnrolmentType">
+		<xs:complexContent>
+			<xs:extension base="ProgrammeEnrolmentType">
+				<xs:sequence>
+					<xs:element name="SubProgrammeEnrolment" type="IndustryTrainingEnrolmentType" maxOccurs="20"/>
+					<xs:element name="AdditionalStandard" type="tc:StandardIdentifierType" minOccurs="0" maxOccurs="20"/>
+          <xs:element name="FundingSourceCode" type="FundingSourceCodeType" minOccurs="0" maxOccurs="1" >
+            <xs:annotation>
+              <xs:documentation>Allows Apprenticeships to be identified as funded by Modern Apprenticeship (MA) or New Zealand Apprenticeship (NZA)</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="CreateMATrainingPlanType">
+		<xs:sequence>
+			<xs:element name="LearnerDetails" type="tc:LearnerDetailsType"/>
+			<xs:element name="MATrainingPlan" type="MATrainingPlanType"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="CreateProgrammeCourseType">
+		<xs:annotation>
+			<xs:documentation>Information required to request the creation of a new programme or course.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element ref="tc:LocalIdentifier"/>
+			<xs:element name="HistoricalProgrammeCourseNumber" type="bc:NumberType" minOccurs="0" maxOccurs="100">
+				<xs:annotation>
+					<xs:documentation>Identifies the programme as it was stored in a legacy system</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="LocalProgrammeCourseName" type="bc:NameType">
+				<xs:annotation>
+					<xs:documentation>Name the programme or course is known by within the owning organisation</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="NQFLevel" type="tc:NQFLevelType"/>
+			<xs:element name="CreditValue" type="CreditValueType"/>
+			<xs:element name="DurationMonths" type="DurationType"/>
+			<xs:element name="FundingSourceCode" type="FundingSourceCodeType" maxOccurs="50"/>
+			<xs:element name="StartDate" type="bc:DateType"/>
+			<xs:element name="ExpiryDate" type="bc:DateType" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Date the programme is due to expire. Enrolments will not be accepted in this programme after the expiry date.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="IndustryCode" type="bc:CodeType" maxOccurs="100">
+				<xs:annotation>
+					<xs:documentation>Identifies the industries that the programme is aimed at.  If the programme is not aimed at a specific industry please use "T999999" (not stated).</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="TermsAndConditionsIndicator" type="bc:IndicatorType">
+				<xs:annotation>
+					<xs:documentation>Indicates that the ITO has read, understood and agreed to all TEC terms and conditions relating to programme approval.  Must be set to True for TEC to accept the programme registration.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+      <xs:element name="CeasingProgrammeIdentifier" type="CeasingProgrammeIdentifierType" minOccurs="0" maxOccurs="20">
+        <xs:annotation>
+          <xs:documentation>An optional element for the programme number issued by the ITO and provider number of that ITO that a trainee was previously enrolled in for the scenario where the previous ITO has merged with your ITO or had ceased operations.</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+			<xs:element name="ProgrammeType" type="ProgrammeType"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="CreateProgrammeCourseVersionType">
+		<xs:annotation>
+			<xs:documentation>Information required to request the creation of a new version of an existing programme or course.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element ref="tc:ProgrammeNumber"/>
+			<xs:element name="ProgrammeDetail" type="CreateProgrammeCourseType">
+				<xs:annotation>
+					<xs:documentation>Details to be recorded on the new programme version</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="CreateTrainingAgreementType">
+		<xs:sequence>
+			<xs:element name="LearnerDetails" type="tc:LearnerDetailsType"/>
+			<xs:element name="TrainingAgreement" type="TrainingAgreementType"/>
+			<xs:element name="ProgrammeEnrolment" type="EnrolmentType"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="DeleteMACVisitType">
+		<xs:annotation>
+			<xs:documentation>Allows an ITO to delete a MAC visit against a training plan if it has been incorrectly reported to the TEC.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="LearnerDetails" type="tc:LearnerDetailsType"/>
+			<xs:element name="TrainingPlanLocalIdentifier" type="bc:IdentifierType">
+				<xs:annotation>
+					<xs:documentation>A number issued by the ITO that identifies the MA Training Plan.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="VisitDate" type="bc:DateType">
+				<xs:annotation>
+					<xs:documentation>The date the visit occurred</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="EnrolmentIdentifierStatusType">
+		<xs:annotation>
+			<xs:documentation>Identifies an enrolment and its status.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element ref="tc:LocalIdentifier"/>
+			<xs:element name="Status" type="EnrolmentStatusType"/>
+			<xs:element name="ParticipationEndDate" type="bc:DateType" nillable="true"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="EnrolmentType">
+		<xs:choice>
+			<xs:element name="SimpleEnrolment" type="SimpleEnrolmentType" maxOccurs="10">
+				<xs:annotation>
+					<xs:documentation>A simple enrolment with no sub enrolments.  May be either an Industry Training or Modern Apprenticeship enrolment.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="ComplexModernApprenticeshipEnrolment" type="ComplexModernApprenticeshipEnrolmentType"/>
+		</xs:choice>
+	</xs:complexType>
+	<xs:complexType name="EnrolmentStandardType">
+		<xs:annotation>
+			<xs:documentation>Describes the status of a standard within an enrolment.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="tc:StandardIdentifierType">
+				<xs:sequence>
+					<xs:element name="Status" type="AchievementStatusType"/>
+					<xs:element name="AchievedDate" type="bc:DateType" nillable="true"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="FailureType">
+		<xs:annotation>
+			<xs:documentation>Failure Element indicates that the messages were processed with errors. It WILL have additional information that will help the caller with information the TEC wish to communicate back based on the original request.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="PerformanceDataMessage" type="TertiaryPerformanceResultOperationParameterRequiredType" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>This element will contain the message, operation parameters and values TEC wish to communicate back to the caller</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="FetchEnrolmentDetailsType">
+		<xs:annotation>
+			<xs:documentation>
+        Identifies an Enrolment event that occured for a given learner using the provider's local identifier for the event.
+      </xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element ref="tc:LearnerLocalIdentifier">
+				<xs:annotation>
+					<xs:documentation>Identifies the learner that the learner event belongs to.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element ref="tc:LocalIdentifier">
+				<xs:annotation>
+					<xs:documentation>Identifies the learner event.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="FetchEnrolmentDetailsResultType">
+		<xs:annotation>
+			<xs:documentation>
+        The result of a request for the details of an enrolment.
+      </xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="LearnerDetails" type="tc:LearnerDetailsType"/>
+			<xs:choice>
+				<xs:element name="SimpleEnrolment" type="FullSimpleEnrolmentType"/>
+				<xs:element name="ComplexModernApprenticeshipEnrolment" type="FullComplexModernApprenticeshipEnrolmentType"/>
+			</xs:choice>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="FetchTrainingAgreementDetailsType">
+		<xs:annotation>
+			<xs:documentation>
+        Identifies a Training Agreement event that occured for a given learner using the provider's local identifier for the event.
+      </xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element ref="tc:LearnerLocalIdentifier">
+				<xs:annotation>
+					<xs:documentation>Identifies the learner that the learner event belongs to.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element ref="tc:LocalIdentifier">
+				<xs:annotation>
+					<xs:documentation>Identifies the learner event.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="FetchTrainingAgreementDetailsResultType">
+		<xs:annotation>
+			<xs:documentation>
+        The result of a request for the details of a training agreement.
+      </xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="LearnerDetails" type="tc:LearnerDetailsType"/>
+			<xs:element name="TrainingAgreementDetails" type="FullTrainingAgreementDetailsType"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="FullComplexModernApprenticeshipEnrolmentType">
+		<xs:annotation>
+			<xs:documentation>
+        The full details of a Complex Modern Apprenticeship Enrolment.
+        This includes the training plan, enrolment status, additional unit standards
+        and their statuses.
+      </xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="ProgrammeEnrolmentType">
+				<xs:sequence>
+					<xs:element name="Status" type="EnrolmentStatusType"/>
+					<xs:element name="LastUpdatedDate" type="bc:DateType"/>
+					<xs:element name="LastTransferDate" type="bc:DateType" minOccurs="0"/>
+					<xs:element name="ParticipationEndDate" type="bc:DateType" nillable="true"/>
+					<xs:element name="SubProgrammeEnrolments" type="FullSimpleEnrolmentType" maxOccurs="20"/>
+					<xs:element name="AdditionalUnitStandards" type="EnrolmentStandardType" minOccurs="0" maxOccurs="100"/>
+          <xs:element name="FundingSourceCode" type="FundingSourceCodeType" minOccurs="0" maxOccurs="1"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="FullSimpleEnrolmentType">
+		<xs:annotation>
+			<xs:documentation>
+        The full details of a Simple Enrolment.
+        This includes the enrolment status and additional unit standards
+        and their statuses.
+      </xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="ProgrammeEnrolmentType">
+				<xs:sequence>
+					<xs:element name="Status" type="EnrolmentStatusType"/>
+					<xs:element name="LastUpdatedDate" type="bc:DateType"/>
+					<xs:element name="LastTransferDate" type="bc:DateType" minOccurs="0"/>
+					<xs:element name="ParticipationEndDate" type="bc:DateType" nillable="true"/>
+					<xs:element name="FundingSourceCode" type="FundingSourceCodeType"/>
+					<xs:element name="UnitStandards" type="EnrolmentStandardType" minOccurs="0" maxOccurs="100"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="FullTrainingAgreementDetailsType">
+		<xs:annotation>
+			<xs:documentation>
+        The full details of a Training Agreement.
+        This includes the training agreement status and full details of all enrolments.
+      </xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="TrainingAgreementType">
+				<xs:sequence>
+					<xs:element name="Status" type="TrainingAgreementStatusType"/>
+					<xs:element name="LastUpdatedDate" type="bc:DateType"/>
+					<xs:element name="TrainingAgreementEndDate" type="bc:DateType" nillable="true"/>
+					<xs:element name="Enrolments" type="EnrolmentIdentifierStatusType" maxOccurs="unbounded"/>
+					<xs:element name="MATrainingPlan" type="MATrainingPlanType" nillable="true"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="LearnerEventIdentifierType">
+		<xs:annotation>
+			<xs:documentation>
+        Identifies an event that occured for a given learner using the provider's local identifier for the event.
+        This type has been replaced by the following concrete types: FetchEnrolmentDetailsType and FetchTrainingAgreementDetailsType. This type will be removed in the next major schema version release.
+      </xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element ref="tc:LearnerLocalIdentifier">
+				<xs:annotation>
+					<xs:documentation>Identifies the learner that the learner event belongs to.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element ref="tc:LocalIdentifier">
+				<xs:annotation>
+					<xs:documentation>Identifies the learner event.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="IndustryTrainingEnrolmentType">
+		<xs:complexContent>
+			<xs:extension base="ProgrammeEnrolmentType">
+				<xs:sequence>
+					<xs:element name="UnitStandard" type="tc:StandardIdentifierType" minOccurs="0" maxOccurs="100"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="LimitedCreditProgrammeType">
+		<xs:sequence>
+			<xs:element name="TargetProgrammeNumber" type="tc:ProgrammeNumberType">
+				<xs:annotation>
+					<xs:documentation>The programme that the trainee will enrol on if they successfully complete the LCP.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element ref="EmbeddedLiteracyIndicator"/>
+			<xs:element name="Standard" type="ProgrammeStandardType" maxOccurs="100"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="MATrainingPlanType">
+		<xs:sequence>
+			<xs:element ref="tc:LocalIdentifier"/>
+			<xs:element name="TrainingAgreementLocalIdentifier" type="bc:IdentifierType">
+				<xs:annotation>
+					<xs:documentation>A number issued by the ITO that identifies a training agreement.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="MACProviderNumber" type="bc:NumberType">
+				<xs:annotation>
+					<xs:documentation>The provider number of the MAC who signed the training plan.  Also known as EDUMIS number. When used as part of a response from TEC, may contain 'NOT FOUND' if an error occurs with loading the specified provider number.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="TrainingPlanSignedDate" type="bc:DateType">
+				<xs:annotation>
+					<xs:documentation>Date the training plan was signed by the trainee, employer and MAC.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="NationalQualificationProgrammeType">
+		<xs:sequence>
+			<xs:element ref="TargetQualificationIdentifier"/>
+			<xs:element ref="EmbeddedLiteracyIndicator"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="PauseTrainingAgreementType" abstract="true">
+		<xs:annotation>
+			<xs:documentation>The basic attributes common to pausing a training agreement</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="LearnerDetails" type="tc:LearnerDetailsType"/>
+			<xs:element name="TrainingAgreementLocalIdentifier" type="bc:IdentifierType">
+				<xs:annotation>
+					<xs:documentation>A number issued by the ITO that identifies a training agreement.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="PauseDate" type="bc:DateType">
+				<xs:annotation>
+					<xs:documentation>The date the training agreement was paused.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="PlaceTrainingAgreementInGraceType">
+		<xs:annotation>
+			<xs:documentation/>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="PauseTrainingAgreementType">
+				<xs:sequence>
+					<xs:element name="GraceReasonCode" type="GraceReasonCodeType"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="PlaceTrainingAgreementOnHoldType">
+		<xs:annotation>
+			<xs:documentation/>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="PauseTrainingAgreementType">
+				<xs:sequence>
+					<xs:element name="OnHoldReasonCode" type="OnHoldReasonCodeType"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="ProgrammeEnrolmentType" abstract="true">
+		<xs:annotation>
+			<xs:documentation>The basic attributes common to all enrolments</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element ref="tc:LocalIdentifier"/>
+			<xs:element name="ProgrammeCourseIdentifier" type="tc:ProgrammeCourseIdentifierType"/>
+			<xs:element name="EnrolmentDate" type="bc:DateType">
+				<xs:annotation>
+					<xs:documentation>Date the learner became enrolled on a programme or course.  Different from the date they started participating.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="ParticipationStartDate" type="bc:DateType">
+				<xs:annotation>
+					<xs:documentation>Date the learner started actual training or learning.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+      <xs:element name="CeasingProgrammeEnrolmentIdentifier" type="CeasingProgrammeIdentifierType" minOccurs="0" maxOccurs="1">
+        <xs:annotation>
+          <xs:documentation>An optional element for the enrolment number issued by the ITO and provider number of the ITO a trainee was previously enrolled in for the scenario where the previous ITO has merged with your ITO or had ceased operations.</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="ProgrammeStandardType">
+		<xs:sequence>
+			<xs:element name="StandardIdentifier" type="tc:StandardIdentifierOptionalVersionType"/>
+			<xs:element ref="MandatoryStandardIndicator"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="ProgrammeType">
+		<xs:choice>
+			<xs:element name="LimitedCreditProgramme" type="LimitedCreditProgrammeType"/>
+			<xs:element name="SupplementaryCreditProgramme" type="SupplementaryCreditProgrammeType"/>
+			<xs:element name="NationalQualification" type="NationalQualificationProgrammeType"/>
+			<xs:element name="ComplexModernApprenticeshipProgramme" type="ComplexModernApprenticeshipProgrammeType"/>
+		</xs:choice>
+	</xs:complexType>
+	<xs:complexType name="RecordMACVisitType">
+		<xs:annotation>
+			<xs:documentation>Allows an ITO to record a MAC visit against a training plan.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="LearnerDetails" type="tc:LearnerDetailsType"/>
+			<xs:element name="TrainingPlanLocalIdentifier" type="bc:IdentifierType">
+				<xs:annotation>
+					<xs:documentation>A number issued by the ITO that identifies the MA Training Plan.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="VisitDate" type="bc:DateType">
+				<xs:annotation>
+					<xs:documentation>The date the visit occurred</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="RestartTrainingAgreementType">
+		<xs:annotation>
+			<xs:documentation>Allows an ITO to restart a training agreement that has been previously placed on hold or put into a grace period.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="LearnerDetails" type="tc:LearnerDetailsType"/>
+			<xs:element name="TrainingAgreementLocalIdentifier" type="bc:IdentifierType">
+				<xs:annotation>
+					<xs:documentation>A number issued by the ITO that identifies a training agreement.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="RestartDate" type="bc:DateType">
+				<xs:annotation>
+					<xs:documentation>The date the training agreement was restarted.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="SimpleEnrolmentType">
+		<xs:complexContent>
+			<xs:extension base="IndustryTrainingEnrolmentType">
+				<xs:sequence>
+					<xs:element name="FundingSourceCode" type="FundingSourceCodeType"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="SuccessType">
+		<xs:annotation>
+			<xs:documentation>Success Element indicates that the messages were processed without any errors. It MAY have additional information that will help the caller with information the TEC wish to communicate back based on the original request.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="PerformanceDataMessage" type="TertiaryPerformanceResultOperationParameterOptionalType" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>This element will contain the message, operation parameters (optional) and values TEC wish to communicate back to the caller</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="SupplementaryCreditProgrammeType">
+		<xs:sequence>
+			<xs:element ref="TargetQualificationIdentifier" minOccurs="0"/>
+			<xs:element ref="EmbeddedLiteracyIndicator"/>
+			<xs:element name="Standard" type="ProgrammeStandardType" maxOccurs="100"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="TertiaryPerformanceResultType">
+		<xs:sequence>
+			<xs:element name="ObjectCategoryDescription" type="bc:DescriptionType">
+				<xs:annotation>
+					<xs:documentation>The catagory description of the message TEC want to communicate back</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="ObjectIdentifiers">
+				<xs:annotation>
+					<xs:documentation>This element will contain the caller values passed to TEC and TEC want to make sure it communicate those values back in the context of the category and transaction codes.</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="ObjectIdentifier" type="bc:SimpleKeyValueType" maxOccurs="unbounded"/>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="TransactionResultCode" type="bc:CodeType">
+				<xs:annotation>
+					<xs:documentation>The result code TEC uses to identify the specific message communicated back to the caller</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="TransactionResultDescription" type="bc:DescriptionType">
+				<xs:annotation>
+					<xs:documentation>The description associated to the result code mentioned above</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="TertiaryPerformanceResultOperationParameterRequiredType">
+		<xs:complexContent>
+			<xs:extension base="TertiaryPerformanceResultType">
+				<xs:sequence>
+					<xs:element name="OperationParameters">
+						<xs:complexType>
+							<xs:sequence>
+								<xs:element name="OperationParameter" type="bc:SimpleKeyValueType" maxOccurs="unbounded"/>
+							</xs:sequence>
+						</xs:complexType>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="TertiaryPerformanceResultOperationParameterOptionalType">
+		<xs:complexContent>
+			<xs:extension base="TertiaryPerformanceResultType">
+				<xs:sequence>
+					<xs:element name="OperationParameters" minOccurs="0">
+						<xs:complexType>
+							<xs:sequence>
+								<xs:element name="OperationParameter" type="bc:SimpleKeyValueType" maxOccurs="unbounded"/>
+							</xs:sequence>
+						</xs:complexType>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="TrainingAgreementType">
+		<xs:sequence>
+			<xs:element ref="tc:LocalIdentifier"/>
+			<xs:element name="EmployerHeadOfficeName" type="bc:NameType">
+				<xs:annotation>
+					<xs:documentation>Name of the employer head office e.g. parent company</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="EmployerSubDivisionName" type="bc:NameType" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Where the trainee works for a branch or subdivision include the sub division name.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="EmploymentLocationTLACode" type="bc:CodeType">
+				<xs:annotation>
+					<xs:documentation>The TLA the trainees place or work is located.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="IndustryCode" type="bc:CodeType">
+				<xs:annotation>
+					<xs:documentation>The industry the trainee is primarily employed in. Must be within the coverage of the ITO</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="TrainingAgreementSignedDate" type="bc:DateType">
+				<xs:annotation>
+					<xs:documentation>Date the training agreement was signed by the trainee, employer and ITO.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="MOEExemptionCode" type="bc:CodeType" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Reference to MOE exemption for a learner who should be attending school i.e. under 16.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="EmploymentTypeCode" type="bc:CodeType">
+				<xs:annotation>
+					<xs:documentation>e.g. Private Sector, State Sector, Armed Services etc</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="PriorActivityCode" type="PriorActivityCodeType">
+				<xs:annotation>
+					<xs:documentation>Identifies what the learner was doing before entering training.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="TransferComplexProgrammeCourseVersionType">
+		<xs:sequence>
+			<xs:element name="LearnerDetails" type="tc:LearnerDetailsType"/>
+			<xs:element name="TransferDate" type="bc:DateType">
+				<xs:annotation>
+					<xs:documentation>The date that the transfer to the new programme course version occurred.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="ComplexModernApprenticeshipEnrolment" type="ComplexModernApprenticeshipEnrolmentType"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="TransferEmployerType">
+		<xs:sequence>
+			<xs:element name="LearnerDetails" type="tc:LearnerDetailsType"/>
+			<xs:element name="ExistingTrainingAgreementLocalIdentifier" type="bc:IdentifierType"/>
+			<xs:element name="NewTrainingAgreement" type="TrainingAgreementType"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="TransferMACType">
+		<xs:annotation>
+			<xs:documentation>Allows an ITO to transfer an apprentice from one MAC to another. Causes one MA Training Plan to be ended and another created.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="LearnerDetails" type="tc:LearnerDetailsType"/>
+			<xs:element name="ExistingTrainingPlanLocalIdentifier" type="bc:IdentifierType">
+				<xs:annotation>
+					<xs:documentation>A number issued by the ITO that identifies the original MA Training Plan.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="NewTrainingPlanLocalIdentifier" type="bc:IdentifierType">
+				<xs:annotation>
+					<xs:documentation>A number issued by the ITO that identifies the new MA Training Plan.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="NewMACProviderNumber" type="bc:NumberType">
+				<xs:annotation>
+					<xs:documentation>The provider number of the MAC who signed the new training plan.  Also know as EDUMIS number.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="NewTrainingPlanSignedDate" type="bc:DateType">
+				<xs:annotation>
+					<xs:documentation>The date that the new training plan was signed.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="TransferSimpleProgrammeCourseVersionType">
+		<xs:sequence>
+			<xs:element name="LearnerDetails" type="tc:LearnerDetailsType"/>
+			<xs:element name="TransferDate" type="bc:DateType">
+				<xs:annotation>
+					<xs:documentation>The date that the transfer to the new programme course version occurred.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="SimpleEnrolment" type="SimpleEnrolmentType"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="UpdateComplexModernApprenticeshipEnrolmentType">
+		<xs:sequence>
+			<xs:element name="LearnerDetails" type="tc:LearnerDetailsType"/>
+			<xs:element name="ComplexModernApprenticeshipEnrolment" type="ComplexModernApprenticeshipEnrolmentType"/>
+    </xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="UpdateProgrammeCourseVersionType">
+		<xs:annotation>
+			<xs:documentation>Information required to update an existing version of a programme or course.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element ref="tc:ProgrammeNumber"/>
+			<xs:element name="VersionNumber" type="VersionNumberType">
+				<xs:annotation>
+					<xs:documentation>Identifies the version of the programme to be updated.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="ExpiryDate" type="bc:DateType" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Date the programme is due to expire. Enrolments will not be accepted in this programme after the expiry date.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="TermsAndConditionsIndicator" type="bc:IndicatorType">
+				<xs:annotation>
+					<xs:documentation>Indicates that the ITO has read, understood and agreed to all TEC terms and conditions relating to programme approval.  Must be set to True for TEC to accept the update of an existing programme.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+      <xs:element name="FundingSourceCode" type="FundingSourceCodeType" minOccurs="0" maxOccurs="20">
+        <xs:annotation>
+          <xs:documentation>Allows the FundingSourceCode of New Zealand Appretince (NZA) to be applied to a programme that was created with Modern Apprentice (MA)</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="UpdateLearnerDetailsType">
+		<xs:sequence>
+			<xs:element name="LearnerDetails" type="tc:LearnerDetailsType"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="UpdateSimpleEnrolmentType">
+		<xs:sequence>
+			<xs:element name="LearnerDetails" type="tc:LearnerDetailsType"/>
+			<xs:element name="SimpleEnrolment" type="SimpleEnrolmentType"/>
+		</xs:sequence>
+	</xs:complexType>
+  <xs:complexType name="DeleteEnrolmentType">
+    <xs:annotation>
+      <xs:documentation>Allows an enrolment to be deleted, this is primarily intended for scenarios where invalid data on an enrolment can not be updated through ITR.</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="LearnerDetails" type="tc:LearnerDetailsType"/>
+      <xs:element ref="tc:LocalIdentifier">
+        <xs:annotation>
+          <xs:documentation>The Local Id of the enrolment that is to be deleted.</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="EnrolmentDeletionReasonCode" type="EnrolmentDeletionReasonCodeType" />
+    </xs:sequence>
+  </xs:complexType>
+	<xs:complexType name="UpdateTrainingAgreementType">
+		<xs:sequence>
+			<xs:element name="LearnerDetails" type="tc:LearnerDetailsType"/>
+			<xs:element name="TrainingAgreement" type="TrainingAgreementType"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="UpdateMATrainingPlanType">
+		<xs:sequence>
+			<xs:element name="LearnerDetails" type="tc:LearnerDetailsType"/>
+			<xs:element name="MATrainingPlan">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element ref="tc:LocalIdentifier"/>
+						<xs:element name="TrainingPlanSignedDate" type="bc:DateType">
+							<xs:annotation>
+								<xs:documentation>Date the training plan was signed by the trainee, employer and MAC.</xs:documentation>
+							</xs:annotation>
+						</xs:element>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="WithdrawEnrolmentType">
+		<xs:annotation>
+			<xs:documentation>Withdrawal from an enrolment prior to successful completion</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="LearnerDetails" type="tc:LearnerDetailsType"/>
+			<xs:element name="EnrolmentIdentifier" type="tc:EnrolmentIdentifierType"/>
+			<xs:element name="WithdrawalDate" type="bc:DateType">
+				<xs:annotation>
+					<xs:documentation>Date the trainee ceased enrolment or funding ceased (training agreement)</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="WithdrawalReasonCode" type="WithdrawalReasonType">
+				<xs:annotation>
+					<xs:documentation>Identifies the reason why a trainee withdrew</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="WithdrawTrainingAgreementType">
+		<xs:annotation>
+			<xs:documentation>Withdrawal from a training agreement prior to successful completion</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="LearnerDetails" type="tc:LearnerDetailsType"/>
+			<xs:element name="TrainingAgreementLocalIdentifier" type="bc:IdentifierType">
+				<xs:annotation>
+					<xs:documentation>A number issued by the ITO that identifies a training agreement.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="WithdrawalDate" type="bc:DateType">
+				<xs:annotation>
+					<xs:documentation>Date the training agreement ceased</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="WithdrawalReasonCode" type="WithdrawalReasonType">
+				<xs:annotation>
+					<xs:documentation>Identifies the reason why a trainee withdrew</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+  <xs:complexType name="CeasingProgrammeIdentifierType">
+    <xs:sequence>
+      <xs:element ref="tc:LocalIdentifier">
+        <xs:annotation>
+          <xs:documentation>An optional element for the programme number issued by the ITO a trainee was previously enrolled in for the scenario where the previous ITO has merged with your ITO or had ceased operations.</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="ProviderNumber" type="bc:NumberType">
+        <xs:annotation>
+          <xs:documentation>The provider number of the previous ITO.  Also known as EDUMIS number. When used as part of a response from TEC, may contain 'NOT FOUND' if an error occurs with loading the specified provider number.</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+	<!-- **************** Top Level Message Types********************** -->
+	<xs:complexType name="FetchTertiaryPerformanceDataType">
+		<xs:choice>
+			<xs:element ref="FetchTrainingAgreementDetails"/>
+			<xs:element ref="FetchEnrolmentDetails"/>
+		</xs:choice>
+	</xs:complexType>
+	<xs:complexType name="FetchTertiaryPerformanceDataResultType">
+		<xs:choice>
+			<xs:element ref="FetchTrainingAgreementDetailsResult"/>
+			<xs:element ref="FetchEnrolmentDetailsResult"/>
+		</xs:choice>
+	</xs:complexType>
+	<xs:complexType name="SubmitTertiaryPerformanceDataType">
+		<xs:choice>
+			<xs:element ref="AddSimpleEnrolment"/>
+			<xs:element ref="CreateMATrainingPlan"/>
+			<xs:element ref="CreateProgrammeCourse"/>
+			<xs:element ref="CreateProgrammeCourseVersion"/>
+			<xs:element ref="CreateTrainingAgreement"/>
+      <xs:element ref="DeleteEnrolment"/>
+			<xs:element ref="DeleteMACVisit"/>
+			<xs:element ref="PlaceTrainingAgreementInGrace"/>
+			<xs:element ref="PlaceTrainingAgreementOnHold"/>
+			<xs:element ref="RecordMACVisit"/>
+			<xs:element ref="RestartTrainingAgreement"/>
+			<xs:element ref="TransferComplexProgrammeCourseVersion"/>
+			<xs:element ref="TransferEmployer"/>
+			<xs:element ref="TransferMAC"/>
+			<xs:element ref="TransferSimpleProgrammeCourseVersion"/>
+			<xs:element ref="UpdateComplexModernApprenticeshipEnrolment"/>
+			<xs:element ref="UpdateLearnerDetails"/>
+			<xs:element ref="UpdateProgrammeCourseVersion"/>
+			<xs:element ref="UpdateSimpleEnrolment"/>
+			<xs:element ref="UpdateTrainingAgreement"/>
+			<xs:element ref="UpdateMATrainingPlan"/>
+			<xs:element ref="WithdrawEnrolment"/>
+			<xs:element ref="WithdrawTrainingAgreement"/>
+		</xs:choice>
+	</xs:complexType>
+	<!-- ********************* ELEMENTS ************* -->
+	<xs:element name="AddSimpleEnrolment" type="AddSimpleEnrolmentType"/>
+	<xs:element name="CreateMATrainingPlan" type="CreateMATrainingPlanType"/>
+	<xs:element name="CreateProgrammeCourse" type="CreateProgrammeCourseType"/>
+	<xs:element name="CreateProgrammeCourseVersion" type="CreateProgrammeCourseVersionType"/>
+	<xs:element name="CreateTrainingAgreement" type="CreateTrainingAgreementType"/>
+	<xs:element name="DeleteMACVisit" type="DeleteMACVisitType"/>
+	<xs:element name="EmbeddedLiteracyIndicator" type="bc:IndicatorType">
+		<xs:annotation>
+			<xs:documentation>Identifies whether the programme contains embedded literacy and numeracy</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:element name="Failure" type="FailureType"/>
+	<xs:element name="FetchEnrolmentDetails" type="FetchEnrolmentDetailsType"/>
+	<xs:element name="FetchEnrolmentDetailsResult" type="FetchEnrolmentDetailsResultType"/>
+	<xs:element name="FetchTrainingAgreementDetails" type="FetchTrainingAgreementDetailsType"/>
+	<xs:element name="FetchTrainingAgreementDetailsResult" type="FetchTrainingAgreementDetailsResultType"/>
+	<xs:element name="MandatoryStandardIndicator" type="bc:IndicatorType">
+		<xs:annotation>
+			<xs:documentation>Identifies whether the standard is mandatory.</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:element name="PlaceTrainingAgreementInGrace" type="PlaceTrainingAgreementInGraceType"/>
+	<xs:element name="PlaceTrainingAgreementOnHold" type="PlaceTrainingAgreementOnHoldType"/>
+	<xs:element name="RecordMACVisit" type="RecordMACVisitType"/>
+	<xs:element name="RestartTrainingAgreement" type="RestartTrainingAgreementType"/>
+	<xs:element name="Success" type="SuccessType"/>
+	<xs:element name="TargetQualificationIdentifier" type="tc:QualificationBasicIdentifierType">
+		<xs:annotation>
+			<xs:documentation>The qualification that the trainee is attempting to achieve </xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:element name="TransferComplexProgrammeCourseVersion" type="TransferComplexProgrammeCourseVersionType"/>
+	<xs:element name="TransferEmployer" type="TransferEmployerType"/>
+	<xs:element name="TransferMAC" type="TransferMACType"/>
+	<xs:element name="TransferSimpleProgrammeCourseVersion" type="TransferSimpleProgrammeCourseVersionType"/>
+	<xs:element name="UpdateComplexModernApprenticeshipEnrolment" type="UpdateComplexModernApprenticeshipEnrolmentType"/>
+	<xs:element name="UpdateLearnerDetails" type="UpdateLearnerDetailsType"/>
+	<xs:element name="UpdateProgrammeCourseVersion" type="UpdateProgrammeCourseVersionType"/>
+	<xs:element name="UpdateSimpleEnrolment" type="UpdateSimpleEnrolmentType"/>
+  <xs:element name="DeleteEnrolment" type="DeleteEnrolmentType" />
+	<xs:element name="UpdateTrainingAgreement" type="UpdateTrainingAgreementType"/>
+	<xs:element name="UpdateMATrainingPlan" type="UpdateMATrainingPlanType"/>
+	<xs:element name="WithdrawEnrolment" type="WithdrawEnrolmentType"/>
+	<xs:element name="WithdrawTrainingAgreement" type="WithdrawTrainingAgreementType"/>
+</xs:schema>

@@ -77,7 +77,7 @@ namespace OASystems.ITRBroker.Services
         {
             IJobDetail jobDetail = JobBuilder.Create<ITRJob>()
                 .UsingJobData("crmUrl", iTRJobMetadata.CrmUrl)
-                .UsingJobData("crmClientID", iTRJobMetadata.CrmClientID)
+                .UsingJobData("crmClientId", iTRJobMetadata.CrmClientID)
                 .UsingJobData("crmSecret", iTRJobMetadata.CrmSecret)
                 .WithIdentity(iTRJobMetadata.ID.ToString())
                 .Build();

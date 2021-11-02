@@ -1,7 +1,12 @@
+using KissLog;
+using KissLog.AspNetCore;
+using KissLog.CloudListeners.Auth;
+using KissLog.CloudListeners.RequestLogsListener;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,6 +17,9 @@ using OASystems.ITRBroker.Handler;
 using OASystems.ITRBroker.Models;
 using OASystems.ITRBroker.Services;
 using Quartz;
+using System;
+using System.Diagnostics;
+using System.Text;
 
 namespace OASystems.ITRBroker
 {
@@ -41,6 +49,17 @@ namespace OASystems.ITRBroker
 
             services.AddRazorPages()
                 .AddMicrosoftIdentityUI();
+
+            // Configure Kiss Log
+            services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+            services.AddScoped<ILogger>((context) =>
+            {
+                return Logger.Factory.Get();
+            });
+            services.AddLogging(logging =>
+            {
+                logging.AddKissLog();
+            });
 
             // Configure database context
             var server = Configuration["DatabaseConnection:Server"];
@@ -92,7 +111,51 @@ namespace OASystems.ITRBroker
                     pattern: "{controller=ITRJobMetadata}/{action=Index}/{id?}");
             });
 
+            app.UseKissLogMiddleware(options => {
+                ConfigureKissLog(options);
+            });
+
             schedulerService.InitializeITRJobScheduler();
+        }
+
+        private void ConfigureKissLog(IOptionsBuilder options)
+        {
+            // optional KissLog configuration
+            options.Options
+                .AppendExceptionDetails((Exception ex) =>
+                {
+                    StringBuilder sb = new StringBuilder();
+
+                    if (ex is System.NullReferenceException nullRefException)
+                    {
+                        sb.AppendLine("Important: check for null references");
+                    }
+
+                    return sb.ToString();
+                });
+
+            // KissLog internal logs
+            options.InternalLog = (message) =>
+            {
+                Debug.WriteLine(message);
+            };
+
+            // register logs output
+            RegisterKissLogListeners(options);
+        }
+
+        private void RegisterKissLogListeners(IOptionsBuilder options)
+        {
+            // multiple listeners can be registered using options.Listeners.Add() method
+
+            // register KissLog.net cloud listener
+            options.Listeners.Add(new RequestLogsApiListener(new Application(
+                Configuration["KissLog.OrganizationId"],
+                Configuration["KissLog.ApplicationId"])
+            )
+            {
+                ApiUrl = Configuration["KissLog.ApiUrl"]
+            });
         }
     }
 }

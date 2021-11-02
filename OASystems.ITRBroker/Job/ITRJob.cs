@@ -1,9 +1,12 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using CrmEarlyBound;
+using ESIS;
+using KissLog;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.PowerPlatform.Dataverse.Client;
-using Microsoft.Xrm.Sdk.Query;
+using OASystems.ITRBroker.BusinessLogic;
 using OASystems.ITRBroker.Models;
 using Quartz;
-using RestSharp;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -12,64 +15,108 @@ namespace OASystems.ITRBroker.Job
 {
     public class ITRJob : IJob
     {
+        private readonly IConfiguration _configuration;
         private readonly DatabaseContext _dbContext;
 
-        public ITRJob(DatabaseContext dbContext)
+        public ITRJob(IConfiguration configuration, DatabaseContext dbContext)
         {
+            _configuration = configuration;
             _dbContext = dbContext;
         }
 
         public async Task Execute(IJobExecutionContext context)
         {
+            // IJob datamap parameters are in here
+            JobDataMap datamap = context.JobDetail.JobDataMap;
+
+            // Initialize Logger
+            ILogger logger = new Logger(url: datamap.GetString("crmUrl"));
+
             try
             {
-                // Retrieve CRM connection parameters
-                JobDataMap datamap = context.JobDetail.JobDataMap;
-                string crmUrl = datamap.GetString("crmUrl");
-                string crmClientID = datamap.GetString("crmClientID");
-                string crmSecret = datamap.GetString("crmSecret");
+                // Update DB fire time
+                await UpdateFireTimeInDb(context);
 
-                var connectionString = $"AuthType=ClientSecret;Url={crmUrl};ClientId={crmClientID};Secret={crmSecret};";
-                var serviceClient = new ServiceClient(connectionString);
+                // Initialize CRM connection
+                CrmServiceContext crmServiceContext = InitializeCrmConnection(datamap);
 
-                var contactCollection = serviceClient.RetrieveMultiple(new QueryExpression("contact")
-                {
-                    ColumnSet = new ColumnSet(true),
-                    TopCount = 1
-                });
+                // Initialize ESIS Message Header
+                MessageHeadersType messageHeaders = GenerateMessageHeaders(crmServiceContext);
 
-                var testContactName = contactCollection.Entities.First().Attributes["fullname"];
+                // Push Esis Message
+                var pushEsisMessage = new PushEsisMessages(_configuration, crmServiceContext, messageHeaders, logger);
+                logger = await pushEsisMessage.Execute();
 
-                var client = new RestClient("https://webhook.site/ec7ce0cc-51a0-4047-8c3f-486616d20629");
-                client.Timeout = -1;
-                var request = new RestRequest(Method.POST);
-                request.AddHeader("Content-Type", "text/plain");
-                var body = testContactName;
-                request.AddParameter("text/plain", body, ParameterType.RequestBody);
-                IRestResponse response = await client.ExecuteAsync(request);
+                // Pull Esis Message
+                var pullEsisMessage = new PullEsisMessages(_configuration, crmServiceContext, messageHeaders, logger);
+                logger = await pullEsisMessage.Execute();
             }
-            catch
+            catch (Exception ex)
             {
-                // Log error to db
+                logger.Critical(ex.ToString());
             }
             finally
             {
-                await LogFireTimeToDb(context);
+                Logger.NotifyListeners(logger);
             }
         }
 
-        private async Task LogFireTimeToDb(IJobExecutionContext context)
+        #region Private Methods
+        private CrmServiceContext InitializeCrmConnection(JobDataMap datamap)
         {
-            ITRJobMetadata iTRJobMetadata = await _dbContext.ITRJobMetadata.Where(x => x.ID == new Guid(context.JobDetail.Key.Name)).FirstOrDefaultAsync();
+            // Retrieve CRM connection parameters
+            string crmUrl = datamap.GetString("crmUrl");
+            string crmClientId = datamap.GetString("crmClientId");
+            string crmSecret = datamap.GetString("crmSecret");
+
+            // CRM Service Context
+            var connectionString = $"AuthType=ClientSecret;Url={crmUrl};ClientId={crmClientId};Secret={crmSecret};";
+            var service = new ServiceClient(connectionString);
+            return new CrmServiceContext(service);
+        }
+
+        private async Task UpdateFireTimeInDb(IJobExecutionContext context)
+        {
+            var iTRJobMetadata = await _dbContext.ITRJobMetadata.Where(x => x.ID == new Guid(context.JobDetail.Key.Name)).FirstOrDefaultAsync();
             iTRJobMetadata.PreviousFireTimeUtc = context.FireTimeUtc.UtcDateTime;
-
-            if (iTRJobMetadata.IsEnabled && iTRJobMetadata.IsScheduled)
-            {
-                iTRJobMetadata.NextFireTimeUtc = context.NextFireTimeUtc.Value.UtcDateTime;
-            }
-
+            iTRJobMetadata.NextFireTimeUtc = context.NextFireTimeUtc.HasValue ? context.NextFireTimeUtc.Value.UtcDateTime : null;
             _dbContext.Update(iTRJobMetadata);
             await _dbContext.SaveChangesAsync();
         }
+
+        private MessageHeadersType GenerateMessageHeaders(CrmServiceContext crmServiceContext)
+        {
+            // ESIS Message Headers Type
+            var oasSetting = crmServiceContext.Oas_settingsSet.Where(x => x.Oas_name == _configuration["ITRSettings:Name"]).FirstOrDefault();
+            var oasOthers = crmServiceContext.Oas_oasotherSet.Where(x => x.oas_parentsettingid.Id == oasSetting.Id).ToList();
+            MessageHeadersType messageHeaders = new MessageHeadersType();
+            foreach (var other in oasOthers)
+            {
+                if (other.Oas_name == _configuration["ITRSettings:ESAAUsername"])
+                {
+                    messageHeaders.EsaaUsername = other.Oas_Value;
+                }
+                else if (other.Oas_name == _configuration["ITRSettings:ESAAPassword"])
+                {
+                    messageHeaders.EsaaPassword = other.Oas_Value;
+                }
+                else if (other.Oas_name == _configuration["ITRSettings:ESAAProviderCode"])
+                {
+                    messageHeaders.ProviderNumber = other.Oas_Value;
+                }
+                else if (other.Oas_name == _configuration["ITRSettings:TMSName"])
+                {
+                    messageHeaders.TMSUsername = other.Oas_Value;
+                }
+            }
+
+            if (messageHeaders.EsaaUsername == string.Empty || messageHeaders.EsaaPassword == string.Empty || messageHeaders.ProviderNumber == string.Empty || messageHeaders.TMSUsername == string.Empty)
+            {
+                throw new Exception("Missing Message Header information.");
+            }
+
+            return messageHeaders;
+        }
+        #endregion
     }
 }

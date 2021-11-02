@@ -75,7 +75,7 @@ namespace OASystems.ITRBroker.Services
         // Schedule new ITR Job
         private async Task<DateTime?> ScheduleNewJob(ITRJobMetadata iTRJobMetadata)
         {
-            IJobDetail jobDetail = JobBuilder.Create<PushEsisMessagesJob>()
+            IJobDetail jobDetail = JobBuilder.Create<ITRJob>()
                 .UsingJobData("crmUrl", iTRJobMetadata.CrmUrl)
                 .UsingJobData("crmClientId", iTRJobMetadata.CrmClientID)
                 .UsingJobData("crmSecret", iTRJobMetadata.CrmSecret)

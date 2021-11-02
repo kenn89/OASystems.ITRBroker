@@ -1,46 +1,37 @@
-﻿using System;
+﻿using CrmEarlyBound;
+using ESIS;
+using KissLog;
+using Microsoft.Extensions.Configuration;
+using OASystems.ITRBroker.Common;
+using OASystems.ITRBroker.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using CrmEarlyBound;
-using ESIS;
-using Microsoft.Extensions.Configuration;
-using Microsoft.PowerPlatform.Dataverse.Client;
-using Quartz;
-using OASystems.ITRBroker.Models;
-using System.Text;
-using System.Xml.Serialization;
-using System.IO;
-using OASystems.ITRBroker.Common;
-using Microsoft.Xrm.Sdk;
-using KissLog;
 
-namespace OASystems.ITRBroker.Job
+namespace OASystems.ITRBroker.BusinessLogic
 {
-    public class PullEsisMessagesJob : IJob
+    public class PullEsisMessages
     {
         private readonly IConfiguration _configuration;
-        private readonly DatabaseContext _dbContext;
+        private readonly CrmServiceContext _crmServiceContext;
+        private readonly MessageHeadersType _messageHeaders;
         private readonly ILogger _logger;
 
-        private CrmServiceContext crmServiceContext;
-        private MessageHeadersType messageHeader;
-
-        public PullEsisMessagesJob(IConfiguration configuration)
+        public PullEsisMessages(IConfiguration configuration, CrmServiceContext crmServiceContext, MessageHeadersType messageHeaders, ILogger logger)
         {
             _configuration = configuration;
-            _logger = new Logger(url: "/PullEsisMessagesJob");
+            _crmServiceContext = crmServiceContext;
+            _messageHeaders = messageHeaders;
+            _logger = logger;
         }
 
-        public async Task Execute(IJobExecutionContext context)
+        public async Task<ILogger> Execute()
         {
-            JobDataMap datamap = context.JobDetail.JobDataMap;
-            _logger.Info($"CRM Instance: {datamap.GetString("crmUrl")}\nExecuting Pull Message from Esis Job...");
+            _logger.Info("Executing PullEsisMessage...");
 
             try
             {
-                InitializeVariables(context);
-
                 // Get list of ITR Messages with status reason "Sent to ITR" from CRM
                 List<OA_itrmessage> itrMessageList = GetSentToItrItrMessages();
                 _logger.Info($"Retrieved \"Sent to ITR\" ITR Messages from CRM.\n{itrMessageList.Count} record(s) retrieved.");
@@ -73,53 +64,16 @@ namespace OASystems.ITRBroker.Job
             }
             finally
             {
-                _logger.Info("Completed Pull Message from Esis Job.");
-                Logger.NotifyListeners(_logger);
+                _logger.Info("Completed Pull Esis Message.");
             }
+
+            return _logger;
         }
 
         #region Private Methods
-        private void InitializeVariables(IJobExecutionContext context)
-        {
-            // Retrieve CRM connection parameters
-            JobDataMap datamap = context.JobDetail.JobDataMap;
-            string crmUrl = datamap.GetString("crmUrl");
-            string crmClientId = datamap.GetString("crmClientId");
-            string crmSecret = datamap.GetString("crmSecret");
-
-            // CRM Service Context
-            var connectionString = $"AuthType=ClientSecret;Url={crmUrl};ClientId={crmClientId};Secret={crmSecret};";
-            var service = new ServiceClient(connectionString);
-            crmServiceContext = new CrmServiceContext(service);
-
-            // ESIS Message Headers Type
-            var oasSetting = crmServiceContext.Oas_settingsSet.Where(x => x.Oas_name == _configuration["ITRSettings:Name"]).FirstOrDefault();
-            var oasOthers = crmServiceContext.Oas_oasotherSet.Where(x => x.oas_parentsettingid.Id == oasSetting.Id).ToList();
-            messageHeader = new MessageHeadersType();
-            foreach (var other in oasOthers)
-            {
-                if (other.Oas_name == _configuration["ITRSettings:ESAAUsername"])
-                {
-                    messageHeader.EsaaUsername = other.Oas_Value;
-                }
-                else if (other.Oas_name == _configuration["ITRSettings:ESAAPassword"])
-                {
-                    messageHeader.EsaaPassword = other.Oas_Value;
-                }
-                else if (other.Oas_name == _configuration["ITRSettings:ESAAProviderCode"])
-                {
-                    messageHeader.ProviderNumber = other.Oas_Value;
-                }
-                else if (other.Oas_name == _configuration["ITRSettings:TMSName"])
-                {
-                    messageHeader.TMSUsername = other.Oas_Value;
-                }
-            }
-        }
-
         private List<OA_itrmessage> GetSentToItrItrMessages()
         {
-            return crmServiceContext.OA_itrmessageSet.Where(x => x.StatusCode == OA_itrmessage_StatusCode.SenttoITR).ToList();
+            return _crmServiceContext.OA_itrmessageSet.Where(x => x.StatusCode == OA_itrmessage_StatusCode.SenttoITR).ToList();
         }
 
         private void GetOutgoingMessageFromNoteAttachment(List<OA_itrmessage> itrMessageList, out List<Message> fetchMessageList, out List<Message> uploadMessageList)
@@ -130,7 +84,7 @@ namespace OASystems.ITRBroker.Job
             foreach (OA_itrmessage itrMessage in itrMessageList)
             {
                 // Get the message content from the note attachment
-                Message message = CrmHelpers.GetMessageFromNoteAttachment(crmServiceContext, itrMessage.Id, _configuration["IncomingFileName"]);
+                Message message = CrmHelpers.GetMessageFromNoteAttachment(_crmServiceContext, itrMessage.Id, _configuration["IncomingFileName"]);
 
                 if (EsisHelpers.IsFetchTertiaryPerformanceDataMessage(message.Request))
                 {
@@ -178,11 +132,11 @@ namespace OASystems.ITRBroker.Job
                         OA_Allerrorsaddressed = errorsAddressed
                     };
 
-                    crmServiceContext.Detach(itrMessage);
-                    crmServiceContext.Attach(itrMessageUpdate);
-                    crmServiceContext.UpdateObject(itrMessageUpdate);
+                    _crmServiceContext.Detach(itrMessage);
+                    _crmServiceContext.Attach(itrMessageUpdate);
+                    _crmServiceContext.UpdateObject(itrMessageUpdate);
 
-                    CrmHelpers.CreateIncomingMessageToNoteAttachment(crmServiceContext, message, _configuration["IncomingFileName"]);
+                    CrmHelpers.CreateIncomingMessageToNoteAttachment(_crmServiceContext, message, _configuration["IncomingFileName"]);
                 }
             }
         }
@@ -200,7 +154,7 @@ namespace OASystems.ITRBroker.Job
                 {
                     FetchLearnerEventDataResultsRequest request = new FetchLearnerEventDataResultsRequest()
                     {
-                        MessageHeaders = messageHeader,
+                        MessageHeaders = _messageHeaders,
                         MessageId = message.PushResponse
                     };
 
@@ -261,7 +215,7 @@ namespace OASystems.ITRBroker.Job
         {
             ESIS_TecItrLearnerEventServices_v1Client esisServiceClient = new ESIS_TecItrLearnerEventServices_v1Client();
 
-            GetLearnerEventResultsRequest request = new GetLearnerEventResultsRequest(messageHeader, EsisHelpers.CreateMessageIdListType(messageList));
+            GetLearnerEventResultsRequest request = new GetLearnerEventResultsRequest(_messageHeaders, EsisHelpers.CreateMessageIdListType(messageList));
 
             DateTime pullStartedOn = DateTime.Now;
             GetLearnerEventResultsResponse response = await esisServiceClient.GetLearnerEventResultsAsync(request);

@@ -1,55 +1,44 @@
 ﻿using CrmEarlyBound;
 using ESIS;
 using KissLog;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
-using Microsoft.PowerPlatform.Dataverse.Client;
 using OASystems.ITRBroker.Common;
 using OASystems.ITRBroker.Models;
-using Quartz;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using System.Xml.Serialization;
 
-namespace OASystems.ITRBroker.Job
+namespace OASystems.ITRBroker.BusinessLogic
 {
-    public class PushEsisMessagesJob : IJob
+    public class PushEsisMessages
     {
         private readonly IConfiguration _configuration;
-        private readonly DatabaseContext _dbContext;
+        private readonly CrmServiceContext _crmServiceContext;
+        private readonly MessageHeadersType _messageHeaders;
         private readonly ILogger _logger;
 
-        private CrmServiceContext crmServiceContext;
-        private MessageHeadersType messageHeader;
-
-        public PushEsisMessagesJob(IConfiguration configuration, DatabaseContext dbContext)
+        public PushEsisMessages(IConfiguration configuration, CrmServiceContext crmServiceContext, MessageHeadersType messageHeaders, ILogger logger)
         {
             _configuration = configuration;
-            _dbContext = dbContext;
-            _logger = new Logger(url: "/PushEsisMessagesJob");
+            _crmServiceContext = crmServiceContext;
+            _messageHeaders = messageHeaders;
+            _logger = logger;
         }
 
-        public async Task Execute(IJobExecutionContext context)
+        public async Task<ILogger> Execute()
         {
-            JobDataMap datamap = context.JobDetail.JobDataMap;
-            _logger.Info($"CRM Instance: {datamap.GetString("crmUrl")}\nExecuting Push Message to Esis Job...");
+            _logger.Info("Executing Push Esis Message...");
 
             try
             {
-                await UpdateFireTimeInDb(context);
-
-                InitializeVariables(datamap);
-
                 // Get list of ITR Messages with status reason "Queued"
                 List<OA_itrmessage> itrMessageList = GetQueuedItrItrMessages();
                 _logger.Info($"Retrieved \"Queued\" ITR Messages from CRM.\n{itrMessageList.Count} record(s) retrieved.");
 
                 foreach (OA_itrmessage itrMessage in itrMessageList)
                 {
+                    // Initialize step variable for logging purpose
                     string step = string.Empty;
                     try
                     {
@@ -60,7 +49,7 @@ namespace OASystems.ITRBroker.Job
 
                         // Push the Message to ESIS
                         step = "PushEsisMessage";
-                        message = await PushEsisMessage(messageHeader, message);
+                        message = await PushEsisMessage(_messageHeaders, message);
                         _logger.Info(Utility.GeneratePushEsisInfoText(itrMessage.Id.ToString(), "Push Messages to Esis complete."));
 
                         // Update Status/Dates/etc. in CRM
@@ -73,7 +62,7 @@ namespace OASystems.ITRBroker.Job
                         _logger.Error($"ITR Message ID: {itrMessage.Id.ToString()}\nStep: {step}\n\nError Details:\n{ex.ToString()}");
                     }
                 }
-                crmServiceContext.SaveChanges();
+                _crmServiceContext.SaveChanges();
             }
             catch (Exception ex)
             {
@@ -81,73 +70,23 @@ namespace OASystems.ITRBroker.Job
             }
             finally
             {
-                _logger.Info("Completed Push Message to Esis Job.");
-                Logger.NotifyListeners(_logger);
+                _logger.Info("Completed Push Esis Message.");
             }
+
+            return _logger;
         }
 
         #region Private Methods
-        private async Task UpdateFireTimeInDb(IJobExecutionContext context)
-        {
-            var iTRJobMetadata = await _dbContext.ITRJobMetadata.Where(x => x.ID == new Guid(context.JobDetail.Key.Name)).FirstOrDefaultAsync();
-            iTRJobMetadata.PreviousFireTimeUtc = context.FireTimeUtc.UtcDateTime;
-            iTRJobMetadata.NextFireTimeUtc = context.NextFireTimeUtc.HasValue ? context.NextFireTimeUtc.Value.UtcDateTime : null;
-            _dbContext.Update(iTRJobMetadata);
-            await _dbContext.SaveChangesAsync();
-        }
-
-        private void InitializeVariables(JobDataMap datamap)
-        {
-            // Retrieve CRM connection parameters
-            string crmUrl = datamap.GetString("crmUrl");
-            string crmClientId = datamap.GetString("crmClientId");
-            string crmSecret = datamap.GetString("crmSecret");
-
-            // CRM Service Context
-            var connectionString = $"AuthType=ClientSecret;Url={crmUrl};ClientId={crmClientId};Secret={crmSecret};";
-            var service = new ServiceClient(connectionString);
-            crmServiceContext = new CrmServiceContext(service);
-
-            // ESIS Message Headers Type
-            var oasSetting = crmServiceContext.Oas_settingsSet.Where(x => x.Oas_name == _configuration["ITRSettings:Name"]).FirstOrDefault();
-            var oasOthers = crmServiceContext.Oas_oasotherSet.Where(x => x.oas_parentsettingid.Id == oasSetting.Id).ToList();
-            messageHeader = new MessageHeadersType();
-            foreach (var other in oasOthers)
-            {
-                if (other.Oas_name == _configuration["ITRSettings:ESAAUsername"])
-                {
-                    messageHeader.EsaaUsername = other.Oas_Value;
-                }
-                else if (other.Oas_name == _configuration["ITRSettings:ESAAPassword"])
-                {
-                    messageHeader.EsaaPassword = other.Oas_Value;
-                }
-                else if (other.Oas_name == _configuration["ITRSettings:ESAAProviderCode"])
-                {
-                    messageHeader.ProviderNumber = other.Oas_Value;
-                }
-                //else if (other.Oas_name == _configuration["ITRSettings:TMSName"])
-                //{
-                //    messageHeader.TMSUsername = other.Oas_Value;
-                //}
-            }
-
-            if (messageHeader.EsaaUsername == string.Empty || messageHeader.EsaaPassword == string.Empty || messageHeader.ProviderNumber == string.Empty || messageHeader.TMSUsername == string.Empty)
-            {
-                throw new Exception("Message Header information mising.");
-            }
-        }
-
         private List<OA_itrmessage> GetQueuedItrItrMessages()
         {
-            return crmServiceContext.OA_itrmessageSet.Where(x => x.StatusCode == OA_itrmessage_StatusCode.Queued).ToList();
+            return _crmServiceContext.OA_itrmessageSet.Where(x => x.StatusCode == OA_itrmessage_StatusCode.Queued).ToList();
         }
 
         private Message GetOutgoingMessageFromNoteAttachment(Guid itrMessageId)
         {
-            Message message = CrmHelpers.GetMessageFromNoteAttachment(crmServiceContext, itrMessageId, _configuration["OutgoingFileName"]);
+            Message message = CrmHelpers.GetMessageFromNoteAttachment(_crmServiceContext, itrMessageId, _configuration["OutgoingFileName"]);
             message.Status = (int)Status.PulledFromTms;
-            message.TmsName = messageHeader.TMSUsername;
+            message.TmsName = _messageHeaders.TMSUsername;
             message.ProcessedOn = DateTime.Now;
             message.ReceivedFromTmsOn = DateTime.Now;
 
@@ -162,11 +101,11 @@ namespace OASystems.ITRBroker.Job
                 OA_Sent = message.PushStartedOn,
                 StatusCode = OA_itrmessage_StatusCode.SenttoITR
             };
-            crmServiceContext.Detach(itrMessage);
-            crmServiceContext.Attach(itrMessageUpdate);
-            crmServiceContext.UpdateObject(itrMessageUpdate);
+            _crmServiceContext.Detach(itrMessage);
+            _crmServiceContext.Attach(itrMessageUpdate);
+            _crmServiceContext.UpdateObject(itrMessageUpdate);
 
-            CrmHelpers.CreateIncomingMessageToNoteAttachment(crmServiceContext, message, _configuration["IncomingFileName"]);
+            CrmHelpers.CreateIncomingMessageToNoteAttachment(_crmServiceContext, message, _configuration["IncomingFileName"]);
         }
 
         public async Task<Message> PushEsisMessage(MessageHeadersType messageHeader, Message message)
